@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+	<div id="loader"></div>
+	<div id="overlay"></div>
+    <% include ../partials/head %>
+    <% include ../partials/scripts %>
+    <% include ../partials/nav %>
+    <body class="col" id="colID">
+        <% include ../partials/sidenav %>
+		<div id="errorDiv"></div>
+		<div id="otherErr"></div>
+        <div class="container-fluid" id="bodyID">
+            <div class="row">
+                <div class="col-md-2" id="vhDD">
+				<label for="vehicle-dropdown">Vehicle/Team/Coy:</label>
+                    <select required="required" id="vehicle-dropdown" name="vehicleSelect" class="form-control">
+                        <option value="" disabled selected hidden>Vehicle/Team/Coy</option>
+                    </select>
+				</div>
+				<div class="col-md-3">
+				<label for="filterCal">From Date:</label>
+                    <input type="date" name="calendar" class="form-control" id="filterCal" />
+				</div>
+				<div class="col-md-3">
+				<label for="filterCal2">To Date:</label>
+                    <input type="date" name="calendar2"class="form-control" id="filterCal2" /></br>
+				</div>
+				<div class="col-md-1" id="compareChkDiv">
+				<label for="compareChkBox">Compare</label>
+					  <input type="checkbox" id="compareChkBox" data-on="YES" data-off="NO" data-toggle="toggle" onchange="showCompareStatus()">
+				</div>
+				<div class="col-md-2" id="vhDD2">
+				<label for="vehicle-dropdown-2">Compare to:</label>
+					<select required="required" id="vehicle-dropdown-2" name="vehicleSelect2" class="form-control">
+                        <option value="" disabled selected hidden>Vehicle</option>
+                    </select>
+				</div>
+				<div class="col-md-1">
+				<label for="compareChkBox"></label>
+                    <button class="btn btn-sm btn-primary" onclick="getSingleVehicleCharts()">Show My Charts</button>
+				</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Working Hours vs Non-Working (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1">
+                                <canvas id="myChart3"></canvas>
+                            </div>
+                            <div class="chart-notes" id="notesId"">
+                                <p id='utilPara'></p>
+                                <p id='notUtilPara'></p>
+                                <!-- <button type="button" class="btn btn-info" id='utilBtn' onclick="updateUtilChart()">Show Utilized vs. Non-Utilized</button>  -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Travel vs. Stops vs. Service (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-2">
+                                <canvas id="myChart6"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes">
+                            <p id='movePara'></p>
+                            <p id='stopPara'></p>
+							<p id='svcPara'></p>
+                            <!-- <button type="button" class="btn btn-primary" id='idleBtn' onclick="anotherOne()">Show Move vs. Stationary</button> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Service Time at Areas (%)
+                        </div>
+                        <div id="info" name="info">
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-3">
+                                <canvas id="myChart9"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes-sm">
+                            <span id='depotPara'></span> </br>
+                            <span id='portPara'></span> &nbsp; 
+							<span id='whPara'></span> </br>
+                            <span id='parkPara'></span> </br>
+							<span id='customerPara'></span> </br>
+							
+                            <div>
+                                <!-- <button type="button" class="btn btn-success" id='fenceBtn' onclick="getFences()">Show stationary areas</button> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-sm-3 col-sm-3">
+					<div class="chart-wrapper">
+						<div class="chart-title">
+							Avg. Total Distance Travelled(km)
+						</div>
+						<div class="chart-notes-sm">
+							<span id='distPara'></span>
+						</div>
+						<div class="chart-title">
+							Avg. Total Fuel Cost($)
+						</div>
+						
+						<div class="chart-notes-sm">
+						<span id='fuelPricePara'></span>
+						</div>
+						<div class="chart-title">
+							Avg. Estimated Fuel Consumption(ℓ)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='fuelConsumePara'></span>
+						</div>
+						<!--<div class="chart-title">
+							Total Tyre Life Remaining(km)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='tyreLifePara'></span>-->
+						</div>
+					</div>
+				</div>
+            </div>
+            <!-- end of three -->
+			<div class="row" name="row2" id="row2ID">
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Working Hours vs Non-Working (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-4">
+                                <canvas id="myChart3Comp"></canvas>
+                            </div>
+                            <div class="chart-notes" id="notesId">
+                                <p id='utilPara2'></p>
+                                <p id='notUtilPara2'></p>
+                                <!-- <button type="button" class="btn btn-info" id='utilBtn' onclick="updateUtilChart()">Show Utilized vs. Non-Utilized</button>  -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Travel vs. Stops vs. Service (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-5">
+                                <canvas id="myChart6Comp"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes">
+                            <p id='movePara2'></p>
+                            <p id='stopPara2'></p>
+							<p id='svcPara2'></p>
+                            <!-- <button type="button" class="btn btn-primary" id='idleBtn' onclick="anotherOne()">Show Move vs. Stationary</button> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Service Time at Areas (%)
+                        </div>
+                        <div id="info" name="info">
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-6">
+                                <canvas id="myChart9Comp"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes-sm">
+                            <span id='depotPara2'></span> </br>
+                            <span id='portPara2'></span> &nbsp; 
+							<span id='whPara2'></span> </br>
+							<span id='parkPara2'></span> </br>
+							<span id='customerPara2'></span> </br>
+
+                            <div>
+                                <!-- <button type="button" class="btn btn-success" id='fenceBtn' onclick="getFences()">Show stationary areas</button> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-sm-3 col-sm-3">
+					<div class="chart-wrapper">
+						<div class="chart-title">
+							Avg. Total Distance Travelled(km)
+						</div>
+						<div class="chart-notes-sm">
+							<span id='distPara2'></span>
+						</div>
+						<div class="chart-title">
+							Avg. Total Fuel Cost($)
+						</div>
+						
+						<div class="chart-notes-sm">
+						<span id='fuelPricePara2'></span>
+						</div>
+						<div class="chart-title">
+							Avg. Estimated Fuel Consumption(ℓ)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='fuelConsumePara2'></span>
+						</div>
+						<!-- <div class="chart-title">
+							Total Tyre Life Remaining(km)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='tyreLifePara2'></span> -->
+						</div>
+					</div>
+				</div>
+            </div>
+            <!-- end of six -->
+            <!-- end of nine -->  
+        </div>
+    </body>
+    <% include ../partials/footer %>
+</html>

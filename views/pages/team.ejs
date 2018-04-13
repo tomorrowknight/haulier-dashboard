@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/nav %>
+	<% include ../partials/sidenav %>
+	
+<body class="team"> 
+<% include ../partials/sidenav %>
+<div class="container-fluid" id="main">
+            <div id="loader"></div>
+			<div id="overlay"></div>
+            <div class="row">
+                <div class="col-sm-3 col-sm-3">
+                    <select required="required" id="team-dropdown" name="vehicleSelect" class="form-control">
+                        <option value="" disabled selected hidden>Teams</option>
+                    </select>
+                    From: <input type="date" name="calendar" class="form-control" id="filterCal" />
+                    To: <input type="date" name="calendar2"class="form-control" id="filterCal2" /></br>
+					<div class="col-md-1">
+					<label for="compareChkBox">Compare</label>
+					  <input type="checkbox" id="compareChkBoxTeam" data-on="YES" data-off="NO" data-toggle="toggle" onchange="showCompareStatus()">
+					</div>
+					<div class="col-md-2" id="teamDD2">
+					<label for="team-dropdown-2">Compare to:</label>
+					<select required="required" id="team-dropdown-2" name="teamSelect2" class="form-control">
+                        <option value="" disabled selected hidden>Team </option>
+                    </select>
+				</div>
+				<div class="col-md-1">
+				<label for="compareChkBox"></label>
+                    <button class="btn btn-sm btn-primary" onclick="getTeamVehicleCharts()">Filter by Date</button>
+                    </br>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Utilized vs Non-Utilized (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1-2">
+                                <canvas id="myChart3Team"></canvas>
+                            </div>
+                            <div class="chart-notes" id="notesId">
+                                <p id='utilParaTeam'></p>
+                                <p id='notUtilParaTeam'></p>
+                                <!-- <button type="button" class="btn btn-info" id='utilBtn' onclick="updateUtilChart()">Show Utilized vs. Non-Utilized</button>  -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Move vs. Stationary (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1-2">
+                                <canvas id="myChart6Team"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes">
+                            <p id='moveParaTeam'></p>
+                            <p id='stopParaTeam'></p>
+							<p id='svcParaTeam'></p>
+                            <!-- <button type="button" class="btn btn-primary" id='idleBtn' onclick="anotherOne()">Show Move vs. Stationary</button> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Stationary Areas (%)
+                        </div>
+                        <div id="info" name="info">
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1-1">
+                                <canvas id="myChart9Team"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes-sm">
+                            <span id='depotParaTeam'></span> </br>
+                            <span id='portParaTeam'></span> &nbsp;
+							<span id='whParaTeam'></span> </br>
+							<span id='parkParaTeam'></span> </br>
+                            <div>
+                                <!-- <button type="button" class="btn btn-success" id='fenceBtn' onclick="getFences()">Show stationary areas</button> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-sm-3 col-sm-3">
+					<div class="chart-wrapper">
+						<div class="chart-title">
+							Total Distance Travelled(km)
+						</div>
+						<div class="chart-notes-sm">
+							<span id='distParaTeam'></span>
+						</div>
+						<div class="chart-title">
+							Total Fuel Cost($)
+						</div>
+						
+						<div class="chart-notes-sm">
+						<span id='fuelPriceParaTeam'></span>
+						</div>
+						<div class="chart-title">
+							Estimated Fuel Consumption(ℓ)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='fuelConsumeParaTeam'></span>
+						</div>
+						<!--<div class="chart-title">
+							Total Tyre Life Remaining(km)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='tyreLifeParaTeam'></span>
+						</div>-->
+					</div>
+				</div>
+            </div>
+            <!-- end of three -->
+			<div class="row" name="row2" id="row2ID">
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Working Hours vs Non-Working (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1-2">
+                                <canvas id="myChart3TeamComp"></canvas>
+                            </div>
+                            <div class="chart-notes" id="notesId"">
+                                <p id='utilParaTeam2'></p>
+                                <p id='notUtilParaTeam2'></p>
+                                <!-- <button type="button" class="btn btn-info" id='utilBtn' onclick="updateUtilChart()">Show Utilized vs. Non-Utilized</button>  -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Travel vs. Stops vs. Service (%)
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1-2">
+                                <canvas id="myChart6TeamComp"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes">
+                            <p id='moveParaTeam2'></p>
+                            <p id='stopParaTeam2'></p>
+							<p id='svcParaTeam2'></p>
+                            <!-- <button type="button" class="btn btn-primary" id='idleBtn' onclick="anotherOne()">Show Move vs. Stationary</button> -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3 col-sm-3">
+                    <div class="chart-wrapper">
+                        <div class="chart-title">
+                            Service Time at Areas (%)
+                        </div>
+                        <div id="info" name="info">
+                        </div>
+                        <div class="chart-stage">
+                            <div id="grid-1-1">
+                                <canvas id="myChart9TeamComp"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-notes-sm">
+                            <span id='depotParaTeam2'></span> </br>
+                            <span id='portParaTeam2'></span> &nbsp; 
+							<span id='whParaTeam2'></span> </br>
+							<span id='parkParaTeam2'></span> </br>
+
+                            <div>
+                                <!-- <button type="button" class="btn btn-success" id='fenceBtn' onclick="getFences()">Show stationary areas</button> -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				<div class="col-sm-3 col-sm-3">
+					<div class="chart-wrapper">
+						<div class="chart-title">
+							Avg. Total Distance Travelled(km)
+						</div>
+						<div class="chart-notes-sm">
+							<span id='distParaTeam2'></span>
+						</div>
+						<div class="chart-title">
+							Avg. Total Fuel Cost($)
+						</div>
+						
+						<div class="chart-notes-sm">
+						<span id='fuelPriceParaTeam2'></span>
+						</div>
+						<div class="chart-title">
+							Avg. Estimated Fuel Consumption(ℓ)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='fuelConsumeParaTeam2'></span>
+						</div>
+						<!-- <div class="chart-title">
+							Total Tyre Life Remaining(km)
+						</div>
+						<div class="chart-notes-sm">
+						<span id='tyreLifePara2'></span> -->
+						</div>
+					</div>
+				</div>
+            </div>
+            <!-- end of six -->
+            <!-- end of nine -->  
+        </div>
+    </body>
+    <% include ../partials/footer %>
+</html>
