@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/navLogin %>
+	
+	<body>
+		<% if(errType==="0"){%>
+		<div class="alert alert-success" id="errorDiv"><strong><%=errMsg%></strong></div>
+		<% }else if(errType==="X"){%>
+		<div class="alert alert-danger" id="errorDiv"><strong><%=errMsg%></strong></div>
+		<%}%>
+	  <div class="wrapper">
+		<form class="form-signin" action="forgot" method="POST">       
+		  <h2 class="form-signin-heading">Forgot your Password?</h2>
+		  <input type="text" class="form-control" id="emailId" name="email" placeholder="Enter your Email Address" required="" autofocus="" />
+		  <br>
+		  <button class="btn btn-lg btn-primary btn-block" type="submit">Reset Password</button>   
+		</form>		
+	  </div>
+    </body>
+	
+</html>

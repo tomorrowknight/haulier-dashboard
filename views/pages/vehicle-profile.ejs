@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <% include ../partials/head %>
+    <% include ../partials/nav %>
+    <body class="vehicle-profile">
+	<% include ../partials/sidenav %>
+	<div class="container-lb2" id="bodyID">
+		<div id="form_div">
+		<form action="setVehicleInfo" id="vehStats" method="POST">
+			<h3>Set Vehicle Statistics</h3>
+			<select required="required" id="vehicle-dropdown-vp" name="vehicleSelect" class="form-control" >
+			<option value="" disabled selected hidden>Vehicle Plate No.</option>
+			</select>
+			<br>
+<!-- 		  	 Fuel Amount Remaining(l):<br>
+		  	 <input type="number" class="form-control" min="0" step="0.01" name="fuelRemain" required><br> -->
+			 Estimated Fuel Consumption of Vehicle(l/km):<br>
+		  	 <input type="number" class="form-control" min="0" step="0.01" name="fuelCon"><br>
+			 Fuel Price(per l):<br>
+		  	 <input type="number" class="form-control" min="0" step="0.01" name="fuelPrice" required><br>
+<!-- 		  	 Tyre Lifespan(km):<br>
+		  	 <input type="number" class="form-control" min="0" name="tyreWear"> -->
+		</form>
+		<br>
+			 <button type="submit" id= "submitVehProfile" class="btn btn-info btn-md" form="vehStats" >Submit Vehicle Stats</button>
+		</div>
+	<div class="clearfix"></div>
+	<br>
+	<span id="messageEdit"></span>
+	</div>
+        <% include ../partials/footer %>
+		<% include ../partials/scripts %>
+
+    </body>
+</html>

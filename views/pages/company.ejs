@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/nav %>
+	
+
+
+<body class="col">
+<% include ../partials/sidenav %>
+<div class="container-fluid" id="main">
+	From: <input type="date" name="calendar" id="filterCal" /> To: <input type="date" name="calendar2" id="filterCal2" />
+	<button class="btn btn-sm btn-primary" onclick="getUtilizedAll()">Filter by Date</button>
+    <div class="row">
+        <div class="col-sm-3 col-sm-3">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Utilized vs Non-Utilized (%)
+					<button class="btn-minus"></button>
+                </div>
+                <div class="chart-stage">
+                    <div id="grid-1-2">
+                        <canvas id="myChart3"></canvas>
+                    </div>
+                    <div class="chart-notes">
+                        <!-- <button type="button" class="btn btn-info" id='utilBtn' onclick="updateUtilChart()">Show Utilized vs. Non-Utilized</button> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3 col-sm-3">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Move vs. Stationary (%)
+                </div>
+                <div class="chart-stage">
+                    <div id="grid-1-2">
+                        <canvas id="myChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-notes">
+                    <!-- <button type="button" class="btn btn-primary" id='idleBtn' onclick="anotherOne()">Show Move vs. Stationary</button> -->
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3 col-sm-3">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Stationary Areas (%)
+                </div>
+                <div id="info" name="info">
+                </div>
+                <div class="chart-stage">
+                    <div id="grid-1-1">
+                        <canvas id="myChart2"></canvas>
+                    </div>
+                </div>
+                <div class="chart-notes">
+                    <div>
+                        <!-- <button type="button" class="btn btn-success" id='fenceBtn' onclick="getFences()">Show stationary areas</button> -->
+                    </div>
+                </div>
+            </div>
+		</div>
+	</div>
+</div>
+    </body>
+	<% include ../partials/footer %>
+
+</html>

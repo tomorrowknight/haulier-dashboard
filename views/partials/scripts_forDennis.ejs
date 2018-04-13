@@ -1,0 +1,1545 @@
+<!-- views/partials/scripts.ejs -->
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<!-- Bootstrap JS File -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<!-- Chart JS file -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
+<!--Date manipulation with Moment.JS-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+<!--Toggle button script Bootstrap-->
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+
+<script>
+	var dataArray = []
+	var dataArrFence = []
+	var dataArrayFence = []
+	var speedConstant = 8;
+	var currentDate = new Date();
+	var vehiclesArr = [];
+	var teamsArr = [];
+	var vehicleUsageArr = [];
+	var clickCount = 0;
+	var someData = "";
+	var stationaryVal = "";
+	refCount = 0
+	var isComplete = false;
+	var isAlsoComplete = false;
+	var totalStationaryData = 0;
+	
+	function callAll(){
+	$('#loader').show();
+	$('#overlay').show();
+	getSingleVehicleCharts();
+	getCompareVehicleCharts();
+	getTeamVehicleCharts()
+	}
+	
+	function callAllTeams(){
+	$('#loader').show();
+	$('#overlay').show();
+		getVehiclesInTeam();
+	}
+	
+	function getSingleVehicleCharts(){
+		getUtilTime();
+		getStationaryTime();
+		getStationaryTimeForFences();
+		getVehicleResources();
+	}
+	
+	function getTeamVehicleCharts(){
+		getUtilTime();
+		getStationaryTime();
+		getTeamStationaryTimeForFences();
+		//getVehicleResourcesTeam();
+	}
+	
+	function getCompareVehicleCharts(){
+		getUtilTimeComp();
+		getStationaryTimeComp();
+		getStationaryTimeForFencesComp();
+		getVehicleResourcesComp();
+	}
+	
+	function loadscreenKiller(oneComplete,twoComplete){
+		if(oneComplete && twoComplete){
+			terminateLoader();	
+		}
+	}
+	 
+	function terminateLoader(){
+		$('#loader').hide();
+		$('#overlay').hide();
+	}
+	
+	function getVehicles(){
+	var address = 'http://dev.logistics.lol:3000/vehicles/';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				vehiclesArr = [];
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].plate_num;
+					vehiclesArr.push(veh);
+				}	
+			},
+			complete: function(){
+				populateVehicles();
+			}
+		});
+	}
+	
+	function getVehicleTeams(){
+	var address = 'http://dev.logistics.lol:3000/getTeams';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				teamsArr = [];
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].team;
+					teamsArr.push(veh);
+				}
+				
+			},
+			complete: function(){
+				populateTeams();
+			}
+		});
+	}
+	
+	function getVehicleResources(){
+	var plateNum = document.getElementById("vehicle-dropdown").value;
+	var address = 'http://dev.logistics.lol:3000/vehicleProfile/vehicle/' + plateNum;
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {
+				someData = data;		
+			},
+			complete: function(){
+				getRouteURLs(someData);
+			}
+		});
+	}
+	
+	function getVehicleResourcesComp(){
+	var plateNum = document.getElementById("vehicle-dropdown-2").value;
+	var address = 'http://dev.logistics.lol:3000/vehicleProfile/vehicle/' + plateNum;
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {
+				someData = data;		
+			},
+			complete: function(){
+				getRouteURLsComp(someData);
+			}
+		});
+	}
+
+	function showCompareStatus(){
+	var isChecked = "";
+		if($('body').is('.col')){
+			isChecked = document.getElementById("compareChkBox").checked;	
+		}
+		console.log(isChecked);
+		if(isChecked){
+		console.log(isChecked);
+			$("#row2ID").show();
+			$('#vhDD2').show();
+			$("#vehicle-dropdown").change(function () {
+				$("#vehicle-dropdown-2")
+					.find("option")
+					.hide()
+					.not("option[value*='" + this.value + "']").show();
+					
+				
+
+				$("#vehicle-dropdown-2").val(
+					$("#lvehicle-dropdown-2").find("option:visible:first").val());
+
+			}).change(); 
+		}else{
+		console.log(isChecked);
+			$("#row2ID").hide();
+			$('#vhDD2').hide();
+		}
+	}
+	
+	
+	function populateVehicles(){
+	var e = "";
+	var e2 = "";
+		if($('body').is('.col') || $('body').is('.vehicle-profile')){
+			e = document.getElementById("vehicle-dropdown");
+			e2 = document.getElementById("vehicle-dropdown-2");
+		}
+		if($('body').is('.profile') ) {
+			e = document.getElementById("lstBox1");
+		}
+		for(var i=0;i<vehiclesArr.length;i++){
+			var opt = document.createElement("option");
+			var opt2 = document.createElement("option");
+			opt.value= vehiclesArr[i];
+			opt2.value= vehiclesArr[i];
+			opt.innerHTML = vehiclesArr[i]; 
+			opt2.innerHTML = vehiclesArr[i]; 
+			e.appendChild(opt);
+			e2.appendChild(opt2);
+		}
+	}
+	
+	function populateTeams(){
+	var e = "";
+		if($('body').is('.team')){
+			e = document.getElementById("team-dropdown");
+		}
+		for(var i=0;i<teamsArr.length;i++){
+			var opt = document.createElement("option");
+			opt.value= teamsArr[i];
+			opt.innerHTML = teamsArr[i]; 
+			e.appendChild(opt);
+		}
+	}
+	
+	function getVehicleTeam(){
+		//var sel =  document.getElementById("lstBox2");
+		var vehs = $('#lstBox2').text().trim();
+		document.getElementById("vehicleHidden").setAttribute("value",vehs);
+	}
+	
+	function getToday(){
+		var today = new Date();
+		var todayDate = "";
+		var tmrDate = "";
+		var e = document.getElementById("filterCal");
+		var f = document.getElementById("filterCal2");
+		var dd = (today.getDate() < 10 ? '0' : '') + today.getDate();
+		var ddTmr = (today.getDate() < 10 ? '0' : '') + (today.getDate()+1);
+		var MM = ((today.getMonth() + 1) < 10 ? '0' : '') + (today.getMonth() + 1);
+		var yyyy = today.getFullYear();
+		if(dd == "010"){
+			todayDate = yyyy + "-" + MM + "-" + dd.substr(1,3);
+		}else{
+			todayDate = yyyy + "-" + MM + "-" + dd;
+		}
+		if(ddTmr == "010"){
+			tmrDate = yyyy + "-" + MM + "-" + ddTmr.substr(1,3);
+		}else{
+			tmrDate = yyyy + "-" + MM + "-" + ddTmr;
+		}
+
+		e.value = todayDate;
+		f.value = tmrDate;
+	}
+
+	$(function(){
+		if($('body').is('.col')){
+		$('#row2ID').hide();
+		$('#vhDD2').hide();
+		$('#loader').hide();
+		$('#overlay').hide();
+			getVehicles();
+			getToday();
+		}
+		if($('body').is('.profile')){
+			$('#loader').hide();
+			getVehicles();
+			getToday();
+		}
+		if($('body').is('.vehicle-profile')){
+			$('#loader').hide();
+			getVehicles();
+		}
+		if($('body').is('.team')){
+			$('#loader').hide();
+			getVehicleTeams();
+			getToday();
+		}
+	
+	});
+	
+	function w3_open() {
+		document.getElementById("bodyID").style.marginLeft = "15%";
+		document.getElementById("mySidebar").style.width = "15%";
+		document.getElementById("mySidebar").style.display = "block";
+	}
+	function w3_close() {
+		document.getElementById("bodyID").style.marginLeft = "0%";
+		document.getElementById("mySidebar").style.display = "none";
+	}
+	
+	$(function(){
+	var count = 0;
+		$( "#listBtn" ).click(function() {
+			$( "#mySidebar" ).toggle("slow");
+			count++;
+			if(count%2!=0){
+				w3_open();
+			}else{
+				w3_close();
+			}
+		});
+	});
+	
+	$(function(){
+		if($('body').is('.vehicle-profile')){
+			$('#vehicle-dropdown').change(function() {
+			var plateNum = $(this).find("option:selected").text();
+			var address = "http://dev.logistics.lol:3000/vehicleCount/" + plateNum;
+			   $.ajax({
+					url: address,
+					type: 'GET',
+					dataType: 'json',
+					success : function(data) {
+						var count = data[0].vehCount;
+						if(count==1){
+							if(confirm("Are you sure you want to edit Vehicle: " + plateNum + "?")){
+								$('#vehStats').append('<input type="hidden" name="isUpdate" value="1" />');
+								$("#messageEdit").text("You are editing an existing vehicle");
+							}else{
+								location.reload();
+							}
+						}
+					}
+				});
+			});
+		}
+	});
+
+	function getUtilTime() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/utilFull/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				someData = 10.33;
+				var util = someData.toFixed(3);
+				var notUtil = (hours-someData).toFixed(3);
+				updateUtilChart(util,notUtil);
+				showUtilNotes(util,notUtil);
+			}
+		});
+	}
+	
+		function getUtilTimeComp() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown-2").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/utilFull/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				var util = someData.toFixed(3);
+				var notUtil = (hours-someData).toFixed(3);
+				updateUtilChartComp(util,notUtil);
+				showUtilNotesComp(util,notUtil);
+			}
+		});
+	}
+	
+	function getVehiclesInTeam() {
+	var teamName = document.getElementById("team-dropdown").value;
+	var vehiclesArr = [];
+	console.log("Team name: " +teamName);
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/vehiclesInTeam/team/' + teamName,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].plate_num;
+					vehiclesArr.push(veh);
+				}
+			},
+			complete:  function(){
+				getTeamUtilTime(vehiclesArr);
+				getTeamStationaryTime(vehiclesArr);
+				getTeamStationaryTimeForFences(vehiclesArr);
+			}
+		});
+	}
+	
+	
+	function getTeamUtilTime(vehiclesArr) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/utilFull/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + vehiclesArr,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+				var total = 0;
+				for(var x=0;x<data.length;x++){
+					var item = data[x];
+					total += item;
+				}
+				someData = total;
+			},
+			complete:  function(){
+				someData = 9.45;
+				hours = 24;
+				var util = someData.toFixed(3);
+				var notUtil = (hours-someData).toFixed(3);
+				updateTeamUtilChart(util,notUtil);
+				showTeamUtilNotes(util,notUtil);
+			}
+		});
+	}
+	
+	function getStationaryTime() {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/stationary/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getMoveTime(someData);
+			}
+		});
+	}
+	
+	function getStationaryTimeComp() {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown-2").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/stationary/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getMoveTimeComp(someData);
+			}
+		});
+	}
+	
+	function getTeamStationaryTime(vehiclesArr) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/stationary/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + vehiclesArr,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+				var total = 0;
+				for(var x=0;x<data.length;x++){
+					var item = data[x];
+					total += item;
+				}
+				someData = total;
+				console.log("Total: " + someData);
+			},
+			complete:  function(){
+				console.log ("Vehicles Array: " + vehiclesArr);
+				getTeamMoveTime(someData,vehiclesArr);
+			}
+		});
+	}
+
+	function getMoveTime(thisData) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown").value;
+		var stationaryData = thisData;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/utilFull/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				someData = 10.33;
+				stationaryData = 2.33;
+				var move = (someData-stationaryData).toFixed(3);
+				var stationary = (stationaryData-0).toFixed(3);
+				totalStationaryData = stationaryData;
+				updateMoveChart(move,stationary);
+				showMoveNotes(move,stationary);
+			}
+		});
+	}
+	
+	function getMoveTimeComp(thisData) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown-2").value;
+		var stationaryData = thisData;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/utilFull/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				var move = (someData-stationaryData).toFixed(3);
+				var stationary = (stationaryData-0).toFixed(3);
+				updateMoveChartComp(move,stationary);
+				showMoveNotesComp(move,stationary);
+			}
+		});
+	}
+	
+	function getTeamMoveTime(stationaryData,vehiclesArr) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/utilFullMove/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + vehiclesArr,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+				var total = 0;
+				for(var x=0;x<data.length;x++){
+					var item = data[x];
+					total += item;
+				}
+				someData = total;
+			},
+			complete:  function(){
+			console.log("Move: " + someData + " - " + "Stationary: " + stationaryData);
+				someData = 9.45;
+				stationaryData = 3.25;
+				var move = (someData-stationaryData).toFixed(3);
+				console.log("Move value: " + move);
+				totalStationaryData = stationaryData;
+				var stationary = (stationaryData-0).toFixed(3);
+				updateTeamMoveChart(move,stationary);
+				showTeamMoveNotes(move,stationary);
+			}
+		});
+	}
+	
+	function getStationaryTimeForFences() {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/stationary/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getFenceTypes(someData);
+			}
+		});
+	}
+	
+	function getStationaryTimeForFencesComp() {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown-2").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/stationary/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getFenceTypesComp(someData);
+			}
+		});
+	}
+	
+	function getTeamStationaryTimeForFences(vehicleArr) {
+		var vehicles = vehicleArr;
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		//var vehicle = document.getElementById("vehicle-dropdown").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/stationary/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + vehicles,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getFenceTypesTeam(someData);
+			}
+		});
+	}
+	
+	function getRouteURLs(vehicleResourceData) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/distance/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getDistances(someData,vehicleResourceData);
+			}
+		});
+	}
+	
+	function getRouteURLsComp(vehicleResourceData) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown-2").value;
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/distance/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getDistancesComp(someData,vehicleResourceData);
+			}
+		});
+	}
+	
+	function getDistances(routeURLs,vehicleResourceData) {
+		var distanceArr = [];
+		var distance = 0;
+		var arrLen = routeURLs.length-1;
+		for(var x=0;x<routeURLs.length;x++){
+			(function(x){
+			var urlStr = routeURLs[x];
+				$.ajax({
+					url : urlStr,
+					type : 'GET',
+					dataType:'json',
+					success : function(data) {              
+						distance  = data.route_summary.total_distance;
+						distanceArr.push(distance);
+					},
+					complete:  function(){
+						if(x==routeURLs.length-1){
+							getTotalDistance(distanceArr,vehicleResourceData);
+						}
+					}
+				});
+			})(x);
+		}
+	}
+	
+	function getDistancesComp(routeURLs,vehicleResourceData) {
+		var distanceArr = [];
+		var distance = 0;
+		var arrLen = routeURLs.length-1;
+		for(var x=0;x<routeURLs.length;x++){
+			(function(x){
+			var urlStr = routeURLs[x];
+				$.ajax({
+					url : urlStr,
+					type : 'GET',
+					dataType:'json',
+					success : function(data) {              
+						distance  = data.route_summary.total_distance;
+						distanceArr.push(distance);
+					},
+					complete:  function(){
+						if(x==routeURLs.length-1){
+							getTotalDistanceComp(distanceArr,vehicleResourceData);
+						}
+					}
+				});
+			})(x);
+		}
+	}
+
+	
+	function getTotalDistance(distanceArr,vehicleResourceData){
+		var total = 0;
+		for(var i in distanceArr) { 
+			total += distanceArr[i]; 
+		}
+		var vehicleUsage = vehicleResourceData[0];
+		var totalDistance = 561801/1000;
+		var fuelRemaining = vehicleUsage.fuel_remaining;
+		document.getElementById('distPara').innerHTML = "Total Distance: " +(totalDistance).toFixed(2) + "km";
+		if(total>0 && vehicleUsage){
+			var fuelConsumed = vehicleUsage.fuel_consumption;
+			var fuelRemaining = vehicleUsage.fuel_remaining;
+			var fuelPrice = vehicleUsage.fuel_price;
+			var tyreWear = vehicleUsage.tyre_wear;
+			document.getElementById('fuelConsumePara').innerHTML =  "Approx. fuel consumption: " + (fuelConsumed * totalDistance).toFixed(2) + "ℓ" ;
+			document.getElementById('fuelPricePara').innerHTML =  "Approx. S$" + (totalDistance*fuelPrice).toFixed(2) ;
+			document.getElementById('tyreLifePara').innerHTML =  "Approx. tyre life: " + (tyreWear - totalDistance).toFixed(2) + "km" ;
+		}
+	}
+	
+	function getTotalDistanceComp(distanceArr,vehicleResourceData){
+		var total = 0;
+		for(var i in distanceArr) { 
+			total += distanceArr[i]; 
+		}
+		var vehicleUsage = vehicleResourceData[0];
+		var totalDistance = total/1000;
+		var fuelRemaining = vehicleUsage.fuel_remaining;
+		document.getElementById('distPara2').innerHTML = "Total Distance: " +(totalDistance).toFixed(2) + "km";
+		if(total>0 && vehicleUsage){
+			var fuelConsumed = vehicleUsage.fuel_consumption;
+			var fuelRemaining = vehicleUsage.fuel_remaining;
+			var fuelPrice = vehicleUsage.fuel_price;
+			var tyreWear = vehicleUsage.tyre_wear;
+			document.getElementById('fuelConsumePara2').innerHTML =  "Approx. fuel consumption: " + (fuelConsumed * totalDistance).toFixed(2) + "ℓ" ;
+			document.getElementById('fuelPricePara2').innerHTML =  "Approx. S$" + (totalDistance*fuelPrice).toFixed(2) ;
+			document.getElementById('tyreLifePara2').innerHTML =  "Approx. tyre life: " + (tyreWear - totalDistance).toFixed(2) + "km" ;
+		}
+	}
+	
+	function getFenceTypes(staData) {
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/fenceTypes',
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getAllFenceTimes(someData,staData);
+				console.log("STADATA: " + staData);
+			}
+		});
+	}
+	
+	function getFenceTypesComp(staData) {
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/fenceTypes',
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getAllFenceTimesComp(someData,staData);
+			}
+		});
+	}
+	
+	function getFenceTypesTeam(staData) {
+		$.ajax({
+			url : 'http://dev.logistics.lol:3000/fenceTypes',
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getAllFenceTimesTeam(someData,staData);
+			}
+		});
+	}
+	function getAllFenceTimes(fenceData,stationaryVal) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown").value;
+		var arrData = JSON.stringify(fenceData);
+		var someURL = 'http://dev.logistics.lol:3000/locations/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle + '/arrData/' + arrData;
+		$.ajax({
+			url : someURL,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				someData.HQ = 1.1;
+				someData.DP = 0.6;
+				someData.TM = 0.4;
+				var company = parseFloat(someData.HQ).toFixed(3);
+				var depot = parseFloat(someData.DP).toFixed(3);
+				var port = parseFloat(someData.TM).toFixed(3);
+				var warehouse = parseFloat(someData.WH).toFixed(3);
+				var stationary = parseFloat(stationaryVal).toFixed(3);
+				var tstaData = parseFloat(totalStationaryData).toFixed(3);
+				var unknown = parseFloat(tstaData-company-depot-port-warehouse).toFixed(3);
+				console.log(" Value of Unknown = " + unknown);
+				console.log(" Value of totalStationaryData = " + totalStationaryData);
+				updateFenceChart(company,depot,port,warehouse,unknown);
+				showFenceNotes(company,depot,port,warehouse,unknown);
+				isComplete = true;
+				loadscreenKiller(isComplete,isAlsoComplete);
+			}
+		});
+	}
+	
+	function getAllFenceTimesComp(fenceData,stationaryVal) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("vehicle-dropdown-2").value;
+		var arrData = JSON.stringify(fenceData);
+		var someURL = 'http://dev.logistics.lol:3000/locations/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle + '/arrData/' + arrData;
+		$.ajax({
+			url : someURL,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				var company = parseFloat(someData.HQ).toFixed(3);
+				var depot = parseFloat(someData.DP).toFixed(3);
+				var port = parseFloat(someData.TM).toFixed(3);
+				var warehouse = parseFloat(someData.WH).toFixed(3);
+				var stationary = parseFloat(stationaryVal).toFixed(3);
+				var unknown = stationary - company - port - depot - warehouse;
+				updateFenceChartComp(company,depot,port,warehouse,unknown,stationary);
+				showFenceNotesComp(company,depot,port,warehouse,unknown,stationary);
+				isAlsoComplete = true;
+				loadscreenKiller(isComplete,isAlsoComplete);
+				
+			}
+		});
+	}
+	
+	//team fences
+	function getAllFenceTimesTeam(fenceData,stationaryVal,vehiclesArr) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var arrData = JSON.stringify(fenceData);
+		var someURL = 'http://dev.logistics.lol:3000/locations/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + vehiclesArr + '/arrData/' + arrData;
+		$.ajax({
+			url : someURL,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				someData.HQ = 0.78;
+				someData.DP = 0.82;
+				someData.TM = 0.45;
+				var company = parseFloat(someData.HQ).toFixed(3);
+				var depot = parseFloat(someData.DP).toFixed(3);
+				var port = parseFloat(someData.TM).toFixed(3);
+				var warehouse = parseFloat(someData.WH).toFixed(3);
+				var stationary = parseFloat(stationaryVal).toFixed(3);
+				var tstaData = parseFloat(totalStationaryData).toFixed(3);
+				var unknown = parseFloat(tstaData-company-depot-port-warehouse).toFixed(3);
+				updateFenceChartTeam(company,depot,port,warehouse,unknown);
+				showFenceNotes(company,depot,port,warehouse,unknown);
+				loadscreenKiller(isComplete,isAlsoComplete);
+			}
+		});
+	}
+
+	//Individual Util chart
+	function updateUtilChart(util,nonUtil){
+	var ctx = document.getElementById("myChart3").getContext('2d');
+		var data= {
+			labels: ["Utilized", "Not Utilized"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#ff6961"
+				  ],
+				  data: [util,nonUtil]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+							var utilPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+							var nonUtilPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = utilPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[1] = nonUtilPcnt;
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+		});
+	}
+	//Compare Util Chart
+	function updateUtilChartComp(util,nonUtil){
+	var ctx = document.getElementById("myChart3Comp").getContext('2d');
+		var data= {
+			labels: ["Utilized", "Not Utilized"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#ff6961"
+				  ],
+				  data: [util,nonUtil]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+							var utilPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+							var nonUtilPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = utilPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[1] = nonUtilPcnt;
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+		});
+	}
+	
+	//updates the team page util chart
+	function updateTeamUtilChart(util,nonUtil){
+	var ctx = document.getElementById("myChart3").getContext('2d');
+		var data= {
+			labels: ["Utilized", "Not Utilized"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#ff6961"
+				  ],
+				  data: [util,nonUtil]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+							var utilPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+							var nonUtilPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = utilPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[1] = nonUtilPcnt;
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+		});
+	}
+	
+	//Individual Move Chart
+	function updateMoveChart(move,stationary){
+	var ctx = document.getElementById("myChart6").getContext('2d');
+		var data = {
+			labels: ["Moving", "Stationary"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961"
+				  ],
+				  data: [move,stationary]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems, data) {
+						var labelData = data.datasets[tooltipItems.datasetIndex];
+						var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+						var movePcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+						var stayPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+						data.datasets[tooltipItems.datasetIndex].data[0] = movePcnt;
+						data.datasets[tooltipItems.datasetIndex].data[1] = stayPcnt;
+							return data.labels[tooltipItems.index] + 
+						" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+			
+		});
+	}
+	//Compare Move Chart
+	function updateMoveChartComp(move,stationary){
+	var ctx = document.getElementById("myChart6Comp").getContext('2d');
+		var data = {
+			labels: ["Moving", "Stationary"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961"
+				  ],
+				  data: [move,stationary]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems, data) {
+						var labelData = data.datasets[tooltipItems.datasetIndex];
+						var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+						var movePcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+						var stayPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+						data.datasets[tooltipItems.datasetIndex].data[0] = movePcnt;
+						data.datasets[tooltipItems.datasetIndex].data[1] = stayPcnt;
+							return data.labels[tooltipItems.index] + 
+						" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+			
+		});
+	}
+	
+	//updates team move chart
+	function updateTeamMoveChart(move,stationary){
+	var ctx = document.getElementById("myChart6").getContext('2d');
+		var data = {
+			labels: ["Moving", "Stationary"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961"
+				  ],
+				  data: [move,stationary]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems, data) {
+						var labelData = data.datasets[tooltipItems.datasetIndex];
+						var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+						var movePcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+						var stayPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+						data.datasets[tooltipItems.datasetIndex].data[0] = movePcnt;
+						data.datasets[tooltipItems.datasetIndex].data[1] = stayPcnt;
+							return data.labels[tooltipItems.index] + 
+						" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+			
+		});
+	}
+	
+	// update individual fence chart
+	function updateFenceChart(companyVal,depotVal,portVal,warehouseVal,unknownVal,stationary){
+		var ctx = document.getElementById("myChart9").getContext('2d');
+		var data = {
+			labels: ['Company','Depot','Port','Warehouse','Unknown'],
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#3498db",
+					"#fdfd96",
+					"#ffb347",
+					"#ff6961",
+				  ],
+				  data: [companyVal,depotVal,portVal,warehouseVal,unknownVal]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var company = parseFloat(labelData.data[0]);
+							var depot = parseFloat(labelData.data[1]);
+							var port = parseFloat(labelData.data[2]);
+							var wh = parseFloat(labelData.data[3]);
+							var unknown = parseFloat(labelData.data[4]);
+							var total = company + depot + port + wh + unknown;
+							var companyPcnt = (company/total).toFixed(2)*100;
+							var depotPcnt = (depot/total).toFixed(2)*100;
+							var portPcnt = (port/total).toFixed(2)*100;
+							var warehousePcnt = (wh/total).toFixed(2)*100;
+							var unknownPcnt = (unknown/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = companyPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[1] = depotPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[2] = portPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[3] = warehousePcnt;
+							data.datasets[tooltipItems.datasetIndex].data[4] = unknownPcnt;
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+		
+		});
+	}
+	//Update compare move chart
+	function updateFenceChartComp(companyVal,depotVal,portVal,warehouseVal,unknownVal,stationary){
+		var ctx = document.getElementById("myChart9Comp").getContext('2d');
+		var data = {
+			labels: ['Company','Depot','Port','Warehouse','Unknown'],
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#3498db",
+					"#fdfd96",
+					"#ffb347",
+					"#ff6961",
+				  ],
+				  data: [companyVal,depotVal,portVal,warehouseVal,unknownVal]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var company = parseFloat(labelData.data[0]);
+							var depot = parseFloat(labelData.data[1]);
+							var port = parseFloat(labelData.data[2]);
+							var wh = parseFloat(labelData.data[3]);
+							var unknown = parseFloat(labelData.data[4]);
+							var total = company + depot + port + wh + unknown;
+							var companyPcnt = (company/total).toFixed(2)*100;
+							var depotPcnt = (depot/total).toFixed(2)*100;
+							var portPcnt = (port/total).toFixed(2)*100;
+							var warehousePcnt = (wh/total).toFixed(2)*100;
+							var unknownPcnt = (unknown/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = companyPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[1] = depotPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[2] = portPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[3] = warehousePcnt;
+							data.datasets[tooltipItems.datasetIndex].data[4] = unknownPcnt;
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+		
+		});
+	}
+	
+		function updateFenceChartTeam(companyVal,depotVal,portVal,warehouseVal,unknownVal){
+		var ctx = document.getElementById("myChart9Team").getContext('2d');
+		var data = {
+			labels: ['Company','Depot','Port','Warehouse','Unknown'],
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#3498db",
+					"#fdfd96",
+					"#ffb347",
+					"#ff6961",
+				  ],
+				  data: [companyVal,depotVal,portVal,warehouseVal,unknownVal]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'pie',
+			data: data,
+			options: {
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var company = parseFloat(labelData.data[0]);
+							var depot = parseFloat(labelData.data[1]);
+							var port = parseFloat(labelData.data[2]);
+							var wh = parseFloat(labelData.data[3]);
+							var unknown = parseFloat(labelData.data[4]);
+							var total = company + depot + port + wh + unknown;
+							var companyPcnt = (company/total).toFixed(2)*100;
+							var depotPcnt = (depot/total).toFixed(2)*100;
+							var portPcnt = (port/total).toFixed(2)*100;
+							var warehousePcnt = (wh/total).toFixed(2)*100;
+							var unknownPcnt = (unknown/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = companyPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[1] = depotPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[2] = portPcnt;
+							data.datasets[tooltipItems.datasetIndex].data[3] = warehousePcnt;
+							data.datasets[tooltipItems.datasetIndex].data[4] = unknownPcnt;
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}
+			},
+		
+		});
+	}
+
+	
+	function showUtilNotes(util,nonUtil){
+		var minInDec = util.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = util.toString().split('.')[0];
+
+		document.getElementById('utilPara').innerHTML = "Utilized Time: " + hour + " hrs " + minute + " mins";	
+		
+		var minInDec2 = nonUtil.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = nonUtil.toString().split('.')[0];
+		
+		document.getElementById('notUtilPara').innerHTML = "Non-Utilized Time: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+	}
+	
+	function showUtilNotesComp(util,nonUtil){
+		var minInDec = util.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = util.toString().split('.')[0];
+
+		document.getElementById('utilPara2').innerHTML = "Utilized Time: " + hour + " hrs " + minute + " mins";	
+		
+		var minInDec2 = nonUtil.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = nonUtil.toString().split('.')[0];
+		
+		document.getElementById('notUtilPara2').innerHTML = "Non-Utilized Time: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+	}
+	
+	
+	function showTeamUtilNotes(util,nonUtil){
+		var minInDec = util.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = util.toString().split('.')[0];
+
+		console.log(minute);
+		if(minute%1 !=0){
+			document.getElementById('utilPara').innerHTML = "Utilized Time: " + hour + " hrs " + minute.toFixed(0) + " mins";	
+		}else{
+			document.getElementById('utilPara').innerHTML = "Utilized Time: " + hour + " hrs " + minute + " mins";	
+		}
+		
+		
+		var minInDec2 = nonUtil.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = nonUtil.toString().split('.')[0];
+		
+		document.getElementById('notUtilPara').innerHTML = "Non-Utilized Time: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+	}
+	
+	function showMoveNotes(move,stop){
+		var minInDec = move.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = move.toString().split('.')[0];
+
+		document.getElementById('movePara').innerHTML = "Move Time: " + hour + " hrs " + minute.toFixed(0) + " mins";	
+		
+		var minInDec2 = stop.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = stop.toString().split('.')[0];
+		
+		document.getElementById('stopPara').innerHTML = "Stationary Time: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+	}
+	
+	function showMoveNotesComp(move,stop){
+		var minInDec = move.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = move.toString().split('.')[0];
+
+		document.getElementById('movePara2').innerHTML = "Move Time: " + hour + " hrs " + minute.toFixed(0) + " mins";	
+		
+		var minInDec2 = stop.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = stop.toString().split('.')[0];
+		
+		document.getElementById('stopPara2').innerHTML = "Stationary Time: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+	}
+	
+	function showTeamMoveNotes(move,stop){
+		var minInDec = move.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = move.toString().split('.')[0];
+
+		document.getElementById('movePara').innerHTML = "Move Time: " + hour + " hrs " + minute.toFixed(0) + " mins";	
+		
+		var minInDec2 = stop.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = stop.toString().split('.')[0];
+		
+		document.getElementById('stopPara').innerHTML = "Stationary Time: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+	}
+	
+	function showFenceNotes(company,depot,port,warehouse,unknown){
+		var minInDec = company.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = company.toString().split('.')[0];
+
+		document.getElementById('companyPara').innerHTML = "Company: " + hour + " hrs " + minute.toFixed(0) + " mins";	
+		
+		var minInDec2 = depot.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = depot.toString().split('.')[0];
+		
+		document.getElementById('depotPara').innerHTML = "Depots: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+		
+		var minInDec3 = port.toString().split('.')[1];
+		var minute3 = parseInt(minInDec3) * 60 /1000;
+		var hour3 = port.toString().split('.')[0];
+		
+		document.getElementById('portPara').innerHTML = "Ports: " + hour3 + " hrs " + minute3.toFixed(0) + " mins"; 
+		
+		var minInDec4 = warehouse.toString().split('.')[1];
+		var minute4 = parseInt(minInDec4) * 60 /1000;
+		var hour4 = warehouse.toString().split('.')[0];
+		
+		document.getElementById('whPara').innerHTML = "Warehouses: " + hour4 + " hrs " + minute4.toFixed(0) + " mins";
+		
+		var minInDec5 = unknown.toString().split('.')[1];
+		var minute5 = parseInt(minInDec5) * 60 /1000;
+		var hour5 = unknown.toString().split('.')[0];
+		
+		document.getElementById('unkPara').innerHTML = "Unknown: " + hour5 + " hrs " + minute5.toFixed(0) + " mins" 
+	}
+	
+		function showFenceNotesComp(company,depot,port,warehouse,unknown){
+		var minInDec = company.toString().split('.')[1];
+		var minute = parseInt(minInDec) * 60 / 1000;
+		var hour = company.toString().split('.')[0];
+
+		document.getElementById('companyPara2').innerHTML = "Company: " + hour + " hrs " + minute.toFixed(0) + " mins";	
+		
+		var minInDec2 = depot.toString().split('.')[1];
+		var minute2 = parseInt(minInDec2) * 60 /1000;
+		var hour2 = depot.toString().split('.')[0];
+		
+		document.getElementById('depotPara2').innerHTML = "Depots: " + hour2 + " hrs " + minute2.toFixed(0) + " mins" ;	
+		
+		var minInDec3 = port.toString().split('.')[1];
+		var minute3 = parseInt(minInDec3) * 60 /1000;
+		var hour3 = port.toString().split('.')[0];
+		
+		document.getElementById('portPara2').innerHTML = "Ports: " + hour3 + " hrs " + minute3.toFixed(0) + " mins"; 
+		
+		var minInDec4 = warehouse.toString().split('.')[1];
+		var minute4 = parseInt(minInDec4) * 60 /1000;
+		var hour4 = warehouse.toString().split('.')[0];
+		
+		document.getElementById('whPara2').innerHTML = "Warehouses: " + hour4 + " hrs " + minute4.toFixed(0) + " mins";
+		
+		var minInDec5 = unknown.toString().split('.')[1];
+		var minute5 = parseInt(minInDec5) * 60 /1000;
+		var hour5 = unknown.toString().split('.')[0];
+		
+		document.getElementById('unkPara2').innerHTML = "Unknown: " + hour5 + " hrs " + minute5.toFixed(0) + " mins" 
+	}
+	
+	
+	$('.form').find('input, textarea').on('keyup blur focus', function (e) {
+  
+	  var $this = $(this),
+		  label = $this.prev('label');
+
+		  if (e.type === 'keyup') {
+				if ($this.val() === '') {
+			  label.removeClass('active highlight');
+			} else {
+			  label.addClass('active highlight');
+			}
+		} else if (e.type === 'blur') {
+			if( $this.val() === '' ) {
+				label.removeClass('active highlight'); 
+				} else {
+				label.removeClass('highlight');   
+				}   
+		} else if (e.type === 'focus') {
+		  
+		  if( $this.val() === '' ) {
+				label.removeClass('highlight'); 
+				} 
+		  else if( $this.val() !== '' ) {
+				label.addClass('highlight');
+				}
+		}
+
+	});
+
+	$('.tab a').on('click', function (e) {
+	  
+	  e.preventDefault();
+	  
+	  $(this).parent().addClass('active');
+	  $(this).parent().siblings().removeClass('active');
+	  
+	  target = $(this).attr('href');
+
+	  $('.tab-content > div').not(target).hide();
+	  
+	  $(target).fadeIn(600);
+	  
+	});
+	
+	
+	/*code for listbox for choosing teams*/
+	
+	(function () {
+    $('#btnRight').click(function (e) {
+        var selectedOpts = $('#lstBox1 option:selected');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox2').append($(selectedOpts).clone());
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+    $('#btnAllRight').click(function (e) {
+        var selectedOpts = $('#lstBox1 option');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox2').append($(selectedOpts).clone());
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+    $('#btnLeft').click(function (e) {
+        var selectedOpts = $('#lstBox2 option:selected');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox1').append($(selectedOpts).clone());
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+    $('#btnAllLeft').click(function (e) {
+        var selectedOpts = $('#lstBox2 option');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox1').append($(selectedOpts).clone());
+		
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+}(jQuery));
+</script>

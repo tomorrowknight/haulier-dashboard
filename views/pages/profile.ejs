@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+    <% include ../partials/nav %>
+	<% include ../partials/sidenav %>
+
+    <body class="profile" >
+
+	<div id="container-lb">
+    <div class="subject-info-box-1" id="bodyID">
+		<select multiple="multiple" id='lstBox1' class="form-control">
+		</select>
+	</div>
+	<div class="subject-info-arrows text-center">
+		<input type="button" id="btnAllRight" value=">>" class="btn btn-default" /><br />
+		<input type="button" id="btnRight" value=">" class="btn btn-default" /><br />
+		<input type="button" id="btnLeft" value="<" class="btn btn-default" /><br />
+		<input type="button" id="btnAllLeft" value="<<" class="btn btn-default" />
+	</div>
+		
+		<div class="subject-info-box-2">
+		<select name="vehs" multiple="multiple" id='lstBox2' form="teamAlloc" class="form-control"></select>
+		<form action="/teamAssign" id="teamAlloc" method="POST">
+		</div>
+		Team Name: <input type="text" id="teamNameVal" class="form-control" name="teamName" required><br>
+		<input type="hidden" id="vehicleHidden" class="form-control" name="teamVehData"/>
+		</form>
+		<button type="submit" class="btn btn-info btn-md" form="teamAlloc" onmouseover="assignToHidden()">Form Team</button>
+		<div class="clearfix"></div>
+		<div class="subject-info-box-3">
+		<select multiple="multiple" id='lstBox3' name="removeVehs" class="form-control">
+		</select>
+	</div>
+	<button type="button" id="rmBtn" class="btn btn-danger" onclick="removeTeam()">Remove From Team</button>
+	</div>
+        <% include ../partials/footer %>
+        <% include ../partials/scripts %>
+
+    </body>
+</html>

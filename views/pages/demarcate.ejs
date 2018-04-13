@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/mapscript %>
+	<% include ../partials/nav %>
+	
+    <body class="demarcate-area">
+	<% include ../partials/sidenav %>
+	<div class="containerEx" id="bodyID">
+		<% if(errType==="0"){%>
+		<div class="alert alert-success" id="errorDiv"><strong><%=errMsg%></strong></div>
+		<% }else if(errType==="X"){%>
+		<div class="alert alert-danger" id="errorDiv"><strong><%=errMsg%></strong></div>
+		<%}%>
+		<h3>Demarcate areas of interest </h3>
+		<div id="map"></div>
+		
+		<div id="form_div">
+		<form action="fenceData" id="demcArea" method="POST">
+		  	Area Name:
+		  	<input type="text" class="form-control" name="areaName" required>
+		  	Area Address:
+		  	<input type="text" class="form-control" name="areaAddr">
+		  	Area Postal:
+		  	<input type="text" class="form-control"  name="areaPostal">
+		  	<textarea id='poly' name='poly' readonly ></textarea>
+			<br>
+			<select name="areaType" class="form-control" required>
+			  <option value="" disabled selected hidden>Areas</option>
+			  <option value="CU">Homebase</option>
+			  <option value="PK">Trailer Park</option>
+			  <option value="WH">Warehouse</option>
+			  
+		  </select>
+		</form>
+		<br>
+			 <button type="submit" class="btn btn-info btn-md" form="demcArea">Submit Info</button>
+		</div>
+	</div>
+    </body>
+	<% include ../partials/footer %>
+	
+</html>
