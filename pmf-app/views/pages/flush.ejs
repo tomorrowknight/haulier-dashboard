@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/navLogin %>
+	
+	<body>
+	  <div class="wrapper">
+		<form class="form-signin" action="flushData" method="POST">       
+		  <h2 class="form-signin-heading">Flush Company Data</h2>
+		  </br>
+		  <button class="btn btn-lg btn-danger btn-block" onsubmit="return confirm('Do you really want to flush all your company's data?);" type="submit">Flush</button>   
+		</form>		
+	  </div>
+    </body>
+</html>

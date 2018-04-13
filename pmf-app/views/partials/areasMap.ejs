@@ -1,0 +1,63 @@
+<!-- views/partials/areasMap.ejs -->
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTa_1qUZlC8V-vKaA-lL9ivlmxRxo8qu4&callback=initMap" async defer></script>
+<script>
+	function initMap() {
+		var treeTopWalk = {lat: 1.361869, lng: 103.812043};
+		var markers =[];
+		var content = [];
+		var specificAreas = JSON.parse(localStorage.getItem("specificAreasData"));
+		for(i=0;i<specificAreas.length;i++){
+			var fence_type = specificAreas[i].type;
+			var fenceTypeName = "";
+			if(fence_type=='DP'){
+				fenceTypeName = "Depot";
+			}else if(fence_type=='TM'){
+				fenceTypeName = "Port";
+			}else if(fence_type=="WH"){
+				fenceTypeName = "Warehouse";;
+			}else if(fence_type=="PK"){
+				fenceTypeName = "Parking";;
+			}else if(fence_type=="CU"){
+				fenceTypeName = "Customer Premises";
+			}
+					
+			var contentString = '<div id="content">'+
+			'<h3>' + specificAreas[i].name + ' (' + fenceTypeName +') </h3>' + '<h4> Total time in Area: ' + '<b>' + specificAreas[i].fence_time+ '</b>' +' mins </h4>' 
+			'</div>';
+			content.push(contentString);
+			var subMarker = {
+				lat: specificAreas[i].lat,
+				lng: specificAreas[i].lon
+			}
+			markers.push(subMarker);
+		}
+		
+		//console.log("Hello there - " + specificArea);
+		
+		var map = new google.maps.Map(document.getElementById('map'), {
+		  zoom: 12,
+		  center: treeTopWalk
+		});
+		
+		var infoWindow = new google.maps.InfoWindow(), marker, i;
+
+		
+
+		for(i=0;i<markers.length;i++){
+
+			
+			marker = new google.maps.Marker({
+			  position: markers[i],
+			  map: map,
+			  title: 'Test Markers'
+			});
+			google.maps.event.addListener(marker,'click',(function(marker,i) {
+				return function(){
+					infoWindow.setContent(content[i]);
+					infoWindow.open(map, marker);
+				}
+			})(marker,i));
+		}
+	}
+</script> 

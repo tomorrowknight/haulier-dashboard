@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/nav %>
+	
+	<body>
+	  <% include ../partials/sidenav %>
+	  <% if(errType==="0"){%>
+		<div class="alert alert-success" id="errorDiv"><strong><%=errMsg%></strong></div>
+		<% }else if(errType==="X"){%>
+		<div class="alert alert-danger" id="errorDiv"><strong><%=errMsg%></strong></div>
+		<%}%>
+	  <div class="wrapper" id="bodyID">
+		<form class="form-signin" action="uploadData" method="POST" encType="multipart/form-data">       
+		  <h2 class="form-signin-heading">Upload Data File</h2>
+		  <label for="file">Choose file to upload</label>
+		  <input type="file" class="form-control" id= "myFile" name="file" required="" autofocus="" />    
+		  <br>
+		  <button class="btn btn-lg btn-primary btn-block" type="submit">Upload Data</button>   
+		</form>		
+	  </div>
+    </body>
+	
+
+</html>

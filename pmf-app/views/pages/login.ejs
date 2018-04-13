@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/navLogin %>
+	
+	<body>
+	  <div class="wrapper">
+		<form class="form-signin" action="verifyLogin" method="POST">       
+		  <h2 class="form-signin-heading">Login Here</h2>
+		  <input type="text" class="form-control" name="username" placeholder="Email Address or Username" required="" autofocus="" />
+		  <input type="password" class="form-control" name="pwd" placeholder="Password" required=""/>      
+		  <label class="checkbox">
+			<input type="checkbox" value="remember-me" id="rememberMe" name="rememberMe"> Remember me
+		  </label>
+		  <label class="checkbox">
+			<!-- <a href="/signup">No account yet? Sign Up! </a> -->
+		  </label>
+		  <a href="/forgot">Forgot your password? </a>
+		  <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>   
+		</form>		
+	  </div>
+    </body>
+	
+
+</html>
