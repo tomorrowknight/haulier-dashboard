@@ -1,0 +1,2227 @@
+<!-- views/partials/scripts.ejs -->
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<!-- Bootstrap JS File -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<!-- Chart JS file -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
+<!--Date manipulation with Moment.JS-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.3/moment.min.js"></script>
+<!--Toggle button script Bootstrap-->
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+
+<script>
+	var dataArray = []
+	var dataArrFence = []
+	var dataArrayFence = []
+	var workBarArr = new Array(3);
+	var moveBarArr = new Array(3);
+	var fenceBarArr = new Array(3);
+	var speedConstant = 8;
+	var currentDate = new Date();
+	var vehiclesArr = [];
+	var teamsArr = [];
+	var vehicleUsageArr = [];
+	var clickCount = 0;
+	var someData = "";
+	var stationaryVal = "";
+	refCount = 0
+	var isComplete = false;
+	var isAlsoComplete = false;
+	var totalStationaryData = 0;
+	var port = 1983;
+	var baseURL = 'http://dev.logistics.lol:' + port;
+	/* 
+	function callAll(){
+
+	getSingleVehicleCharts();
+	getCompareVehicleCharts();
+	getTeamVehicleCharts()
+	} */
+	
+	function nullCheck(data){
+		var isNull = true;
+		for(var i=0;i<data.length;i++){
+			if(data[i] != null){
+				isNull = false;
+			}
+		}
+		return isNull;
+	}
+	
+	function onSelectChange(){
+    var strUser = document.getElementById("autoVeh1").value;  //getting the selected option's text
+
+
+		if(strUser.length==7){ 
+			 document.getElementById('autoVeh2').disabled = false;  //enabling the text box because user selected 'Other' option.
+		}
+	}
+	
+	getCompanyCharts();
+	
+	function getSingleVehicleCharts(){
+		$('#loader').show();
+		$('#overlay').show();
+		workBarArr = new Array(3);
+		moveBarArr = new Array(3);
+		fenceBarArr = new Array(3);
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		var team2 = document.getElementById("autoVeh2").value;
+		onSelectChange();
+		//getCompanyCharts();
+		if(team.length>0 && team2.length==0){
+			getCompanyCharts();
+			getTeamVehicleCharts();
+			terminateLoader();
+		}else if(team2.length>0 && team2.length>0){
+			getCompanyCharts();
+			getTeamVehicleCharts();
+			getCompareVehicleCharts();
+			terminateLoader();
+		}else if(team.length==0 && team2.length>0){
+			getCompanyCharts();
+			getTeamVehicleCharts();
+			terminateLoader();
+		}else{
+			var errorMsg = "No data for this selection"
+			//setErrorMessage(errorMsg);
+			terminateLoader();
+		}
+	}
+	
+	function getCompanyCharts(){
+		getCompany();
+		/* getMoveTimeCompany();
+		getServiceAreasCompany();
+		getTravelDistanceCompany(); */
+		//getVehicleResourcesTeam();
+	}
+	
+	function getTeamVehicleCharts(){
+		getUtilTimeTeam();
+		getMoveTimeTeam();
+		getServiceAreasTeam();
+		getTravelDistanceTeam();
+		//getVehicleResourcesTeam();
+	}
+	
+	function getCompareVehicleCharts(){
+		getUtilTimeTeamComp();
+		getMoveTimeTeamComp();
+		getServiceAreasTeamComp();
+		getTravelDistanceTeamComp();
+	}
+	
+	function loadscreenKiller(oneComplete,twoComplete){
+		if(oneComplete && twoComplete){
+			terminateLoader();	
+		}
+	}
+
+	 
+	function terminateLoader(){
+		$('#loader').hide();
+		$('#overlay').hide();
+	}
+	
+	function setErrorMessage(newMsg){
+	var address = baseURL + '/setErrorMsg/' + newMsg;
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) { 
+			},
+			complete: function(){	
+				getErrorMessage();
+			}
+		});
+	}
+	
+		$('#myFile').bind('change', function() {
+
+		  //this.files[0].size gets the size of your file.
+		  alert(this.files[0].size);
+
+		});
+			
+	function checkChartDataExists(vehicle,dateStart,dateEnd){
+	var address = baseURL + '/checkChartData/vehicle/' + vehicle +"/dateStart/" + dateStr + "/dateEnd/" + dateEnd;
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) { 
+			},
+			complete: function(){	
+				getErrorMessage();
+			}
+		});
+	}
+	
+/* 	function getErrorMessage(){
+	var result = "";
+	var address = baseURL + '/getErrorMsg/';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {
+				result = data;
+
+			},
+			complete: function(){
+				var div = document.createElement('div');
+				div.setAttribute('class', 'alert alert-danger');
+				div.id = "errorDiv";
+				div.innerHTML = result;
+				div.style.fontWeight="Bold";
+				document.body.appendChild(div);
+				
+				//<div class="alert alert-success" id="errorDiv"><strong></strong></div>
+				
+							
+			}
+		});
+	}
+	 */
+	function getVehicles(){
+	var address = baseURL + '/vehicles/';
+	var someData = [];
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				vehiclesArr = [];
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].plate_num;
+					someData.push(veh);
+				}	
+			},
+			complete: function(){
+				getTeams(someData);
+			}
+		});
+	}
+	
+	function getTeams(someData){
+	var address = baseURL + '/teams/';
+	var someData2 = [];
+	var concatArr = [];
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) { 	
+		//NOTE: These are team objects not vehicles! 			
+				vehiclesArr = [];
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].team;
+					someData2.push(veh);
+				}
+				concatArr = someData2.concat(someData);
+			},
+			complete: function(){
+				getCompanies(concatArr);
+			}
+		});
+	}
+	
+	function getCompanies(someData){
+	var address = baseURL + '/companies/';
+	var someData2 = [];
+	var concatArr = [];
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) { 
+				//NOTE: These are company objects not vehicles! 
+				vehiclesArr = [];
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].company;
+					someData2.push(veh);
+				}
+				concatArr = someData2.concat(someData);
+			},
+			complete: function(){
+				populateVehicles(concatArr);
+			}
+		});
+	}
+	
+	function getCompany(){
+	var address = baseURL + '/companies/';
+	var companyName = "";
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) { 
+				for(var i=0;i<data.length;i++){
+					companyName = data[i].company;
+				}
+			},
+			complete: function(){
+				document.getElementById('coyName').innerHTML = companyName;
+				getUtilTimeCompany(companyName);
+				getMoveTimeCompany(companyName);
+				getServiceAreasCompany(companyName);
+				getTravelDistanceCompany(companyName);
+			}
+		});
+	}
+		
+
+	function getVehiclesForProfile(){
+	var vehsForProfile = "";
+	var address = baseURL + '/vehiclesInTeam/';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				vehForProfile = data;
+			},
+			complete: function(){
+				populateVehiclesWithTeam(vehForProfile);
+			}
+		});
+	}
+	
+	function populateVehiclesWithTeam(vehForProfile){
+		e = document.getElementById("lstBox3");
+			for(var i=0;i<vehForProfile.length;i++){
+				var vehDetails = vehForProfile[i];
+				var opt = document.createElement("option");
+				opt.value= vehDetails.id;
+				opt.innerHTML = vehDetails.plate_num + " - " + vehDetails.team; 
+				e.appendChild(opt);
+
+			}
+	}
+	
+	/* function addTeam(){
+		var valuesSelected = $('#lstBox2').text();
+		//$("#lstBox2 :selected").remove();
+		var address = baseURL + '/teamAssign/';
+		$.ajax({
+			url : address,
+			data: {teamAssign: valuesSelected},
+			type : 'POST',
+			dataType:'json',
+			success : function(data) {  
+				console.log(data);
+			}
+		});
+	}  */
+	
+	function selectAllItems(){
+        $('#lstBox2 option').prop('selected', true);
+	}
+	
+	function removeTeam(){
+		var valuesSelected = $('#lstBox3').val();
+		$("#lstBox3 :selected").remove();
+		var address = baseURL + '/teamRemove/';
+		$.ajax({
+			url : address,
+			data: {teamRemove: valuesSelected},
+			type : 'POST',
+			dataType:'json',
+			success : function(data) {  
+
+			},
+			complete: function(){
+				location.reload();
+			}
+		});
+	} 
+
+	
+	function getVehicleTeams(){
+	var address = baseURL + '/teams/';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				teamsArr = [];
+				for(var i=0;i<data.length;i++){
+					var veh = data[i].team;
+					teamsArr.push(veh);
+				}
+				
+			},
+			complete: function(){
+				populateTeams();
+			}
+		});
+	}
+	
+	function getNoTeamVehicles(){
+		someData = "";
+		$.ajax({
+			url : baseURL + '/getNoTeamVehicles',
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				populateVehiclesWithNoTeam(someData);
+			}
+		});
+	}
+	
+	function populateVehiclesWithNoTeam(vehForProfile){
+		e = document.getElementById("lstBox1");
+			for(var i=0;i<vehForProfile.length;i++){
+				var vehDetails = vehForProfile[i];
+				var opt = document.createElement("option");
+				opt.value= vehDetails.id;
+				opt.innerHTML = vehDetails.plate_num; 
+				e.appendChild(opt);
+
+			}
+	}
+
+	function radiobutton(){
+		$(document).ready(function(){
+			$('input[type="radio"]').click(function(){
+				var inputValue = $(this).attr("value");
+				var targetBox = $("." + inputValue);
+				$(".drinkcard-cc").not(targetBox).hide();
+				$(targetBox).show();
+			});
+		});
+	}
+	
+
+	function populateVehicles(allData){
+	var allResults = [];
+	var e = "";
+	var e2 = "";
+	var isProfile = false;
+/* 		if($('body').is('.col')){
+			e = document.getElementById("autoVeh1");
+			e2 = document.getElementById("autoVeh2");
+		} */
+		for(var i=0;i<allData.length;i++){
+			if(allData[i]!== ""){
+				allResults.push(allData[i]);
+			}
+		}
+		$( "#autoVeh1" ).autocomplete({
+			source: allResults
+		});
+		$("#autoVeh1").change(function () {
+			$("#autoVeh1")
+				.find("option")
+				.hide()
+				.not("option[value*='" + this.value + "']").show();
+			$("#autoVeh2").val(
+				$("#autoVeh2").find("option:visible:first").val());
+
+		}).change(); 
+		$( "#autoVeh2" ).autocomplete({
+			source: allResults
+		});
+
+	}
+	
+/* 	function populateTeams(){
+	var e = "";
+		if($('body').is('.team')){
+			e = document.getElementById("team-dropdown");
+		}
+		for(var i=0;i<teamsArr.length;i++){
+			var opt = document.createElement("option");
+			opt.value= teamsArr[i];
+			opt.innerHTML = teamsArr[i]; 
+			e.appendChild(opt);
+		}
+	} */
+	
+	//DO NOT DELETE - PART OF ADD TEAMS FROM SELECT MULTIPLE 15-01-18
+	function assignToHidden(){
+		$('#lstBox2 option').prop('selected', true);
+		var allVehicles = $('#lstBox2 option').text();
+		$('#vehicleHidden').val(allVehicles);
+	}
+	
+	assignToHidden();
+	
+	function getToday(){
+		var today = new Date();
+		var todayDate = "";
+		var tmrDate = "";
+		var e = document.getElementById("filterCal");
+		var f = document.getElementById("filterCal2");
+		var dd = (today.getDate() < 10 ? '0' : '') + today.getDate();
+		var ddTmr = (today.getDate() < 10 ? '0' : '') + (today.getDate()+1);
+		var MM = ((today.getMonth() + 1) < 10 ? '0' : '') + (today.getMonth() + 1);
+		var yyyy = today.getFullYear();
+		if(dd == "010"){
+			todayDate = yyyy + "-" + MM + "-" + dd.substr(1,3);
+		}else{
+			todayDate = yyyy + "-" + MM + "-" + dd;
+		}
+		if(ddTmr == "010"){
+			tmrDate = yyyy + "-" + MM + "-" + ddTmr.substr(1,3);
+		}else{
+			tmrDate = yyyy + "-" + MM + "-" + ddTmr;
+		}
+
+		e.value = todayDate;
+		f.value = tmrDate;
+	}
+
+	$(function(){
+		if($('body').is('.col')){
+		$('#row2ID').hide();
+		$('#vhDD2').hide();
+		$('#loader').hide();
+		$('#overlay').hide();
+		$('#barchart').hide();
+			getVehicles();
+			getTeams();
+			//getCompany();
+			getToday();
+		}
+		if($('body').is('.profile')){
+			$('#loader').hide();
+ 			/*getVehicles();
+			getToday(); */
+			getVehiclesForProfile();
+			getNoTeamVehicles();	
+		}
+		if($('body').is('.vehicle-profile')){
+			$('#loader').hide();
+			getVehicleProfile();
+		}
+		if($('body').is('.team')){
+			$('#loader').hide();
+			getVehicleTeams();
+			getToday();
+		}
+	
+	});
+	
+	function w3_open() {
+		document.getElementById("bodyID").style.marginLeft = "15%";
+		document.getElementById("mySidebar").style.width = "15%";
+		document.getElementById("mySidebar").style.display = "block";
+	}
+	function w3_close() {
+		document.getElementById("bodyID").style.marginLeft = "0%";
+		document.getElementById("mySidebar").style.display = "none";
+	}
+	
+	$(function(){
+	var count = 0;
+		$( "#listBtn" ).click(function() {
+			$( "#mySidebar" ).toggle("slow");
+			count++;
+			if(count%2!=0){
+				w3_open();
+			}else{
+				w3_close();
+			}
+		});
+	});
+	function getVehicleProfile(){
+	var vehForProfile = "";
+	var address = baseURL + '/vehicles/';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				vehForProfile = data;
+			},
+			complete: function(){
+				getTeamsForProfile(vehForProfile);
+			}
+		});
+	}
+	
+	function getTeamsForProfile(vehicles){
+	var teams = "";
+	var address = baseURL + '/teams/';
+		$.ajax({
+			url : address,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {  
+				teams = data;
+			},
+			complete: function(){
+				getDataForVehicleProfile(vehicles,teams);
+			}
+		});
+	}
+	
+	function getDataForVehicleProfile(vehForProfile,teamForProfile){
+		e = document.getElementById("autoVeh1-vp");
+		for(var i=0;i<vehForProfile.length;i++){
+			var vehDetails = vehForProfile[i];
+			if(vehDetails !== ""){
+				var opt = document.createElement("option");
+				opt.value= vehDetails.plate_num;
+				opt.innerHTML = vehDetails.plate_num; 
+				e.appendChild(opt);
+			}
+
+		}
+		for(var i=0;i<teamForProfile.length;i++){
+			var teamDetails = teamForProfile[i];
+			var opt = document.createElement("option");
+			var team = teamDetails.team;
+			var teamStr = team.trim();
+			if(teamStr !== ""){
+				opt.value= teamDetails.team;
+				opt.innerHTML = teamDetails.team; 
+				e.appendChild(opt);
+			}
+		}
+	}
+	
+	//Start Company here
+	
+	function getUtilTimeCompany(companyName) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/workTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var work_time = someData[0].work_time;
+				var workByHour = (work_time/60).toFixed(2);
+				var nonWorkByHour = (24-workByHour).toFixed(2);
+				var workData = [];
+				workData.push(work_time);
+				workBarArr[0] =[company,workByHour,nonWorkByHour];
+				var isNull = nullCheck(workData);
+				if(isNull){
+					showNoDataNotesCoy(true,true,true);
+				}else{			
+					consolidateWorkBarData(workBarArr,1);
+					updateUtilChartXCompany(workByHour,nonWorkByHour);
+					showUtilNotesCompany(workByHour,nonWorkByHour);
+				}
+			}
+		});
+	}
+		
+	function getMoveTimeCompany(companyName) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/moveTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var move_time = someData[0].move_time;
+				getStopTimeCompany(move_time,company);
+			}
+		});
+	}
+		
+	function getStopTimeCompany(moveData,companyName) {
+		var mv_time = moveData;
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/stopTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var stop_time = someData[0].unknown_stop;
+				getServiceTimeCompany(mv_time,stop_time,companyName);
+
+			}
+		});
+	}
+	
+	function getServiceTimeCompany(moveData,stopData,companyName) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/serviceTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var service_time = someData[0].service_time;
+				var stop_time = stopData;
+				var move_time = moveData;
+				var moveDataArr = [];
+				moveDataArr.push(service_time,stop_time,move_time);
+				moveBarArr[0] = [company,service_time,stop_time,move_time];
+				var isNull = nullCheck(moveDataArr);
+				if(isNull){
+					showNoDataNotesCoy(false,true,true);
+				}else{
+					updateMoveChartCompany(service_time,stop_time,move_time);
+					consolidateMoveBarData(moveBarArr);
+					showMoveNotesCompany(service_time,stop_time,move_time);
+				}
+			}
+		});
+	}
+	
+	function getServiceAreasCompany(companyName) {
+		someData = "";
+		var svc_depot = "";
+		var svc_terminal= "";
+		var svc_warehouse = "";
+		var svc_parking = "";
+		var svc_customer = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/serviceAreasTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+				console.log(data);
+			},
+			complete: function(){
+				var serviceAreaArr = [];
+				for(var i=0;i<someData.length;i++){
+					var area = someData[i];
+					var fence_type = someData[i].fence_type;
+					if(fence_type=='DP'){
+						svc_depot = area.service_time;
+					}else if(fence_type=='TM'){
+						svc_terminal = area.service_time;
+					}else if(fence_type=="WH"){
+						svc_warehouse = area.service_time;
+					}else if(fence_type=="PK"){
+						svc_parking = area.service_time;
+					}else if(fence_type=="CU"){
+						svc_customer = area.service_time;
+					}
+				}
+				fenceBarArr[0] = [company,svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer];
+				consolidateFenceBarData(fenceBarArr);
+				updateFenceChartCompany(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer);
+				showFenceNotesCompany(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer);
+				terminateLoader();
+			}
+		});
+	}
+	
+	function getTravelDistanceCompany(companyName) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/travelDistanceTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var travelDist = someData[0].travel_distance;
+				if(travelDist==null){
+					travelDist = 0;
+				}
+				getVehicleExpenditureCompany(travelDist,company);
+			}
+		});
+	}
+	
+	function getVehicleExpenditureCompany(travelDist,companyName){
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var company = companyName;
+		$.ajax({
+			url : baseURL + '/vehicleExpenditureTeam/team/' + company,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var vehicleUsage = someData[0];
+				var fuelConsumed = vehicleUsage.fuel_consumption;
+				var fuelRemaining = vehicleUsage.fuel_remaining;
+				var fuelPrice = vehicleUsage.fuel_price;
+				showExpenditureChartCompany(travelDist,fuelConsumed,fuelRemaining,fuelPrice,dateStart,dateEnd);
+
+			}
+		});
+	
+	}
+	
+	function showExpenditureChartCompany(travelDist,fuelConsumed,fuelRemaining,fuelPrice,dateStart,dateEnd){
+		document.getElementById('adCoy').innerHTML = travelDist.toFixed(2) + "km";
+		document.getElementById('conCoy').innerHTML =  (fuelConsumed * travelDist).toFixed(2) + "ℓ" ;
+		document.getElementById('fcCoy').innerHTML =  "$" + (travelDist*fuelPrice).toFixed(2) ;	
+
+	}
+	
+	//START TEAM HERE
+	
+	function getUtilTimeTeam() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/workTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var work_time = someData[0].work_time;
+				var workByHour = (work_time/60).toFixed(2);
+				var nonWorkByHour = (24-workByHour).toFixed(2);
+				var workData = [];
+				workData.push(work_time);
+				workBarArr[1] =[team,workByHour,nonWorkByHour];
+				var isNull = nullCheck(workData);
+				if(isNull){
+					showNoDataNotes(true,true,true);
+				}else{
+					updateUtilChartXTeam(workByHour,nonWorkByHour);
+					showUtilNotesTeam(workByHour,nonWorkByHour);
+				}
+			}
+		});
+	}
+	
+	function getMoveTimeTeam() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/moveTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var move_time = someData[0].move_time;
+				getStopTimeTeam(move_time);
+			}
+		});
+	}
+		
+	function getStopTimeTeam(moveData) {
+		var mv_time = moveData;
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/stopTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var stop_time = someData[0].unknown_stop;
+				getServiceTimeTeam(mv_time,stop_time);
+			}
+		});
+	}
+	
+	function getServiceTimeTeam(moveData,stopData) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/serviceTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var service_time = someData[0].service_time;
+				var stop_time = stopData;
+				var move_time = moveData;
+				var moveDataArr = [];
+				moveDataArr.push(service_time,stop_time,move_time);
+				moveBarArr[1] = [team,service_time,stop_time,move_time];
+				var isNull = nullCheck(moveDataArr);
+				if(isNull){
+					showNoDataNotes(false,true,true);
+				}else{
+					updateMoveChartTeam(service_time,stop_time,move_time);
+					showMoveNotesTeam(service_time,stop_time,move_time);
+				}
+			}
+		});
+	}
+
+	function getServiceAreasTeam() {
+		someData = "";
+		var svc_depot = "";
+		var svc_terminal= "";
+		var svc_warehouse = "";
+		var svc_parking = "";
+		var svc_customer = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/serviceAreasTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+				console.log(data);
+			},
+			complete: function(){
+				var serviceAreaArr = [];
+				for(var i=0;i<someData.length;i++){
+					var area = someData[i];
+					var fence_type = someData[i].fence_type;
+					if(fence_type=='DP'){
+						svc_depot = area.service_time;
+					}else if(fence_type=='TM'){
+						svc_terminal = area.service_time;
+					}else if(fence_type=="WH"){
+						svc_warehouse = area.service_time;
+					}else if(fence_type=="PK"){
+						svc_parking = area.service_time;
+					}else if(fence_type=="CU"){
+						svc_customer = area.service_time;
+					}
+				}
+				fenceBarArr[1] = [team,svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer];
+				updateFenceChartTeam(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer);
+				showFenceNotesTeam(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer);
+				terminateLoader();
+			}
+		});
+	}
+	
+		function getTravelDistanceTeam() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/travelDistanceTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var travelDist = someData[0].travel_distance;
+				if(travelDist==null){
+					travelDist = 0;
+				}
+				getVehicleExpenditureTeam(travelDist);
+			}
+		});
+	}
+	
+	function getVehicleExpenditureTeam(travelDist){
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/vehicleExpenditureTeam/team/' + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var vehicleUsage = someData[0];
+				var fuelConsumed = vehicleUsage.fuel_consumption;
+				var fuelRemaining = vehicleUsage.fuel_remaining;
+				var fuelPrice = vehicleUsage.fuel_price;
+				showExpenditureChartTeam(travelDist,fuelConsumed,fuelRemaining,fuelPrice,dateStart,dateEnd);
+
+			}
+		});
+	
+	}
+	
+	function showExpenditureChartTeam(travelDist,fuelConsumed,fuelRemaining,fuelPrice,dateStart,dateEnd){
+		document.getElementById('adInd').innerHTML = travelDist.toFixed(2) + "km" ;
+		document.getElementById('conInd').innerHTML = (fuelConsumed * travelDist).toFixed(2) + "ℓ";
+		document.getElementById('fcInd').innerHTML =  "$"+ (travelDist*fuelPrice).toFixed(2);	
+
+	}
+	
+	//Team Compare
+	
+	function getUtilTimeTeamComp() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/workTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var work_time = someData[0].work_time;
+				var workByHour = (work_time/60).toFixed(2);
+				var nonWorkByHour = (24-workByHour).toFixed(2);
+				var workData = [];
+				workData.push(work_time);
+				workBarArr[2] =[team,workByHour,nonWorkByHour];
+				var isNull = nullCheck(workData);
+				if(isNull){
+					showNoDataNotesComp(true,true,true);
+				}else{
+					consolidateWorkBarData(workBarArr);
+					updateUtilChartXTeamComp(workByHour,nonWorkByHour);
+					showUtilNotesTeamComp(workByHour,nonWorkByHour);					
+				}
+				
+			}
+		});
+	}
+	
+	function getMoveTimeTeamComp() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/moveTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var move_time = someData[0].move_time;
+				getStopTimeTeamComp(move_time);
+			}
+		});
+	}
+	 
+	function getStopTimeTeamComp(moveData) {
+		var mv_time = moveData;
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/stopTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var stop_time = someData[0].unknown_stop;
+				getServiceTimeTeamComp(mv_time,stop_time);
+
+			}
+		});
+	}
+	
+	function getServiceTimeTeamComp(moveData,stopData) {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/serviceTimeTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var service_time = someData[0].service_time;
+				var stop_time = stopData;
+				var move_time = moveData;
+				var moveDataArr = [];
+				moveDataArr.push(service_time,stop_time,move_time);
+				moveBarArr[2] = [team,service_time,stop_time,move_time];
+				var isNull = nullCheck(moveDataArr);
+				if(isNull){
+					showNoDataNotesComp(false,true,true);
+				}else{
+					consolidateMoveBarData(moveBarArr);
+					updateMoveChartTeamComp(service_time,stop_time,move_time);
+					showMoveNotesTeamComp(service_time,stop_time,move_time);
+				}
+
+			}
+		});
+	}
+
+	function getServiceAreasTeamComp() {
+		someData = "";
+		var svc_depot = "";
+		var svc_terminal= "";
+		var svc_warehouse = "";
+		var svc_parking = "";
+		var svc_customer = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/serviceAreasTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				for(var i=0;i<someData.length;i++){
+					var area = someData[i];
+					var fence_type = someData[i].fence_type;
+					if(fence_type=='DP'){
+						svc_depot = area.service_time;
+					}else if(fence_type=='TM'){
+						svc_terminal = area.service_time;
+					}else if(fence_type=="WH"){
+						svc_warehouse = area.service_time;
+					}else if(fence_type=="PK"){
+						svc_parking = area.service_time;
+					}else if(fence_type=="CU"){
+						svc_customer = area.service_time;
+					}
+				} 
+				fenceBarArr[2] = [team,svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer];
+				consolidateFenceBarData(fenceBarArr);
+				updateFenceChartTeamComp(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer);
+				showFenceNotesTeamComp(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer);
+				terminateLoader();
+			}
+		});
+	}
+	
+		function getTravelDistanceTeamComp() {
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/travelDistanceTeam/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/team/" + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var travelDist = someData[0].travel_distance;
+				if(travelDist==null){
+					travelDist = 0;
+				}
+				getVehicleExpenditureTeamComp(travelDist);
+			}
+		});
+	}
+	
+	function getVehicleExpenditureTeamComp(travelDist){
+		someData = "";
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var team = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/vehicleExpenditureTeam/team/' + team,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete: function(){
+				var vehicleUsage = someData[0];
+				var fuelConsumed = vehicleUsage.fuel_consumption;
+				var fuelRemaining = vehicleUsage.fuel_remaining;
+				var fuelPrice = vehicleUsage.fuel_price;
+				showExpenditureChartTeamComp(travelDist,fuelConsumed,fuelRemaining,fuelPrice,dateStart,dateEnd);
+
+			}
+		});
+	
+	}
+	
+	function showExpenditureChartTeamComp(travelDist,fuelConsumed,fuelRemaining,fuelPrice,dateStart,dateEnd){
+		document.getElementById('adComp').innerHTML = travelDist.toFixed(2) + "km";
+		document.getElementById('conComp').innerHTML =  (fuelConsumed * travelDist).toFixed(2) + "ℓ" ;
+		document.getElementById('fcComp').innerHTML =  "$" + (travelDist*fuelPrice).toFixed(2) ;	
+
+	}
+	
+
+	function minusDate(date1,date2){
+		var epochDay = 86400000;
+		var date1 = new Date(date1);
+		var date2 = new Date(date2);
+		return (date2-date1)/86400000;	
+	}
+
+	function getRouteURLs(vehicleResourceData) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("autoVeh1").value;
+		$.ajax({
+			url : baseURL + '/distance/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getDistances(someData,vehicleResourceData);
+			}
+		});
+	}
+	
+	function getRouteURLsComp(vehicleResourceData) {
+		var dateStart = document.getElementById("filterCal").value;
+		var dateEnd = document.getElementById("filterCal2").value;
+		var tsStart = ( moment(dateStart).unix() )*1000;
+		var tsEnd = ( moment(dateEnd).unix() )*1000;
+		//to convert unix value to secs and then to hours
+		var hours = (tsEnd - tsStart)/1000/3600;
+		var vehicle = document.getElementById("autoVeh2").value;
+		$.ajax({
+			url : baseURL + '/distance/dateStart/' + dateStart + "/dateEnd/" + dateEnd +  "/vehicle/" + vehicle,
+			type : 'GET',
+			dataType:'json',
+			success : function(data) {              
+				someData = data;
+			},
+			complete:  function(){
+				getDistancesComp(someData,vehicleResourceData);
+			}
+		});
+	}
+	
+	function getDistances(routeURLs,vehicleResourceData) {
+		var distanceArr = [];
+		var distance = 0;
+		var arrLen = routeURLs.length-1;
+		for(var x=0;x<routeURLs.length;x++){
+			(function(x){
+			var urlStr = routeURLs[x];
+				$.ajax({
+					url : urlStr,
+					type : 'GET',
+					dataType:'json',
+					success : function(data) {              
+						distance  = data.route_summary.total_distance;
+						distanceArr.push(distance);
+					},
+					complete:  function(){
+						if(x==routeURLs.length-1){
+							getTotalDistance(distanceArr,vehicleResourceData);
+						}
+					}
+				});
+			})(x);
+		}
+	}
+	
+	function getDistancesComp(routeURLs,vehicleResourceData) {
+		var distanceArr = [];
+		var distance = 0;
+		var arrLen = routeURLs.length-1;
+		for(var x=0;x<routeURLs.length;x++){
+			(function(x){
+			var urlStr = routeURLs[x];
+				$.ajax({
+					url : urlStr,
+					type : 'GET',
+					dataType:'json',
+					success : function(data) {              
+						distance  = data.route_summary.total_distance;
+						distanceArr.push(distance);
+					},
+					complete:  function(){
+						if(x==routeURLs.length-1){
+							getTotalDistanceComp(distanceArr,vehicleResourceData);
+						}
+					}
+				});
+			})(x);
+		}
+	}
+	
+	function getTotalDistance(distanceArr,vehicleResourceData){
+		var total = 0;
+		for(var i in distanceArr) { 
+			total += distanceArr[i]; 
+		}
+		var vehicleUsage = vehicleResourceData[0];
+		var totalDistance = total/1000;
+		var fuelRemaining = vehicleUsage.fuel_remaining;
+		document.getElementById('distPara').innerHTML = "Total Distance: " +(totalDistance).toFixed(2) + "km";
+		if(total>0 && vehicleUsage){
+			var fuelConsumed = vehicleUsage.fuel_consumption;
+			var fuelRemaining = vehicleUsage.fuel_remaining;
+			var fuelPrice = vehicleUsage.fuel_price;
+			var tyreWear = vehicleUsage.tyre_wear;
+			document.getElementById('fuelConsumePara').innerHTML =  "Approx. fuel consumption: " + (fuelConsumed * totalDistance).toFixed(1) + "ℓ" ;
+			document.getElementById('fuelPricePara').innerHTML =  "Approx. S$" + (totalDistance*fuelPrice).toFixed(1) ;
+			document.getElementById('tyreLifePara').innerHTML =  "Approx. tyre life: " + (tyreWear - totalDistance).toFixed(2) + "km" ;
+		}
+	}
+	
+	function getTotalDistanceComp(distanceArr,vehicleResourceData){
+		var total = 0;
+		for(var i in distanceArr) { 
+			total += distanceArr[i]; 
+		}
+		var vehicleUsage = vehicleResourceData[0];
+		var totalDistance = total/1000;
+		var fuelRemaining = vehicleUsage.fuel_remaining;
+		document.getElementById('distPara2').innerHTML = "Total Distance: " +(totalDistance).toFixed(2) + "km";
+		if(total>0 && vehicleUsage){
+			var fuelConsumed = vehicleUsage.fuel_consumption;
+			var fuelRemaining = vehicleUsage.fuel_remaining;
+			var fuelPrice = vehicleUsage.fuel_price;
+			var tyreWear = vehicleUsage.tyre_wear;
+			document.getElementById('fuelConsumePara2').innerHTML =  "Approx. fuel consumption: " + (fuelConsumed * totalDistance).toFixed(2) + "ℓ" ;
+			document.getElementById('fuelPricePara2').innerHTML =  "Approx. S$" + (totalDistance*fuelPrice).toFixed(2) ;
+			document.getElementById('tyreLifePara2').innerHTML =  "Approx. tyre life: " + (tyreWear - totalDistance).toFixed(2) + "km" ;
+		}
+	}
+
+	//Util Chart for Company
+	function updateUtilChartXCompany(work,notWork){
+	$('#myChart3Coy').remove(); // this is my <canvas> element
+	$('#grid-1').append('<canvas id="myChart3Coy"><canvas>');
+	var canvas = document.querySelector('#myChart3Coy');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Working", "Not Working"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961"
+				  ],
+				  data: [work,notWork]
+				}]
+			
+		};
+		var workChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				
+				legend: {
+					display: false,
+
+				},
+				tooltips: {
+					callbacks: {
+							label: function(tooltipItems,data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+							var utilPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+							var nonUtilPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = utilPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[1] = nonUtilPcnt.toFixed(2);
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+		});	
+	}
+	
+	//Individual and Team Util chart
+	function updateUtilChartXTeam(work,notWork){
+	$('#myChart3').remove(); // this is my <canvas> element
+	$('#grid-2').append('<canvas id="myChart3"><canvas>');
+	var canvas = document.querySelector('#myChart3');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Working", "Not Working"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961"
+				  ],
+				  data: [work,notWork]
+				}]
+			
+		};
+		var workChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				
+				legend: {
+					display: false,
+
+				},
+				tooltips: {
+					callbacks: {
+							label: function(tooltipItems,data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+							var utilPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+							var nonUtilPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = utilPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[1] = nonUtilPcnt.toFixed(2);
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+		});	
+	}
+	
+	function consolidateWorkBarData(barDataArr1){
+		
+		var barData = [] ;
+		var barDataClean = [];
+		var bkgrndColor = ["#2ecc71","#3498db","#ff6961"];
+		for(var x=0;x<barDataArr1.length;x++){
+			if(barDataArr1[x]!== undefined){
+				barDataClean.push(barDataArr1[x]);
+			}
+		}
+		
+		for(var i=0;i<barDataClean.length;i++){
+			var labelVal = workBarArr[i][0];
+			var backgroundColorVal = bkgrndColor[i];
+			var dataVal = [workBarArr[i][1],workBarArr[i][2]];
+			var dataPoint = {label: labelVal, backgroundColor: backgroundColorVal, data: dataVal}
+			barData.push(dataPoint);
+		}
+		updateUtilBarXTeam(barData);
+	}
+	
+	function consolidateMoveBarData(barDataArr1){
+		var barData = [] ;
+		var barDataClean = [];
+		var bkgrndColor = ["#2ecc71","#3498db","#ff6961"];
+		for(var x=0;x<barDataArr1.length;x++){
+			if(barDataArr1[x]!== undefined){
+				barDataClean.push(barDataArr1[x]);
+			}
+		}
+		for(var i=0;i<barDataClean.length;i++){
+			var labelVal = moveBarArr[i][0];
+			var backgroundColorVal = bkgrndColor[i];
+			var dataVal = [moveBarArr[i][1],moveBarArr[i][2],moveBarArr[i][3]];
+			var dataPoint = {label: labelVal, backgroundColor: backgroundColorVal, data: dataVal}
+			barData.push(dataPoint);
+		}
+		updateMoveBarTeam(barData);
+			
+	}
+	
+	function consolidateFenceBarData(barDataArr1){
+		var barData = [] ;
+		var barDataClean = [];
+		var bkgrndColor = ["#2ecc71","#3498db","#ff6961"];
+		for(var x=0;x<barDataArr1.length;x++){
+			if(barDataArr1[x]!== undefined){
+				barDataClean.push(barDataArr1[x]);
+			}
+		}
+		
+		console.log("TESTA1!: " +barDataClean[0][0]);
+		for(var i=0;i<barDataClean.length;i++){
+			var labelVal = fenceBarArr[i][0];
+			var backgroundColorVal = bkgrndColor[i];
+			var dataVal = [fenceBarArr[i][1],fenceBarArr[i][2],fenceBarArr[i][3]];
+			var dataPoint = {label: labelVal, backgroundColor: backgroundColorVal, data: dataVal}
+			barData.push(dataPoint);
+		}
+		updateFenceBarTeam(barData);
+			
+	}
+	
+	function updateUtilBarXTeam(barData){
+	$('#myChart10').remove(); // this is my <canvas> element
+	$('#grid-10').append('<canvas id="myChart10"><canvas>');
+	var canvas = document.querySelector('#myChart10');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Working Hours","Non-Working Hours"],
+			datasets: barData
+		};
+		var workBarChart = new Chart(ctx, {
+			type: 'bar',
+			data: data,
+			options: {
+				title: {
+					display: false,
+				},
+				barValueSpacing: 1,
+				 scales: {
+           			yAxes: [{
+                			ticks: {
+                    			min: 0,
+						}
+					}]
+				}
+			},
+		});	
+	}
+
+	function updateUtilChartXTeamComp(work,notWork){
+	$('#myChart3Comp').remove(); // this is my <canvas> element
+	$('#grid-3').append('<canvas id="myChart3Comp"><canvas>');
+	var canvas = document.querySelector('#myChart3Comp');
+	var ctx = canvas.getContext('2d');
+		var data= {
+			labels: ["Working", "Not Working"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961"
+				  ],
+				  data: [work,notWork]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems,data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1]);
+							var utilPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+							var nonUtilPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+							data.datasets[tooltipItems.datasetIndex].data[0] = utilPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[1] = nonUtilPcnt.toFixed(2);
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				}, 
+				maintainAspectRatio: false
+			},
+		});
+	}
+	
+	function updateMoveChartCompany(service,stationary,move){
+	$('#myChart6Coy').remove(); // this is my <canvas> element
+	$('#grid-4').append('<canvas id="myChart6Coy"><canvas>');
+	var canvas = document.querySelector('#myChart6Coy');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Service Time", "Unknown Stops","Travel"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#ff6961",
+					"#3498db"
+				  ],
+				  data: [service,stationary,move]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems, data) {
+						var labelData = data.datasets[tooltipItems.datasetIndex];
+						var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1])+ parseFloat(labelData.data[2]);
+						var svcPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+						var stayPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+						var movePcnt = (parseFloat(labelData.data[2])/total).toFixed(2)*100;
+						data.datasets[tooltipItems.datasetIndex].data[0] = svcPcnt.toFixed(2);
+						data.datasets[tooltipItems.datasetIndex].data[1] = stayPcnt.toFixed(2);
+						data.datasets[tooltipItems.datasetIndex].data[2] = movePcnt.toFixed(2);
+							return data.labels[tooltipItems.index] + 
+						" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+			
+		});
+	}
+	
+ 	function updateMoveBarTeam(moveBarArr){
+	$('#myChart11').remove(); // this is my <canvas> element
+	$('#grid-11').append('<canvas id="myChart11"><canvas>');
+	var canvas = document.querySelector('#myChart11');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Service","Unknown Stops","Travel"],
+			datasets: moveBarArr
+		};
+		var moveBarChart = new Chart(ctx, {
+			type: 'bar',
+			data: data,
+			options: {
+				title: {
+					display: false,
+				},
+				barValueSpacing: 1,
+				 scales: {
+           			yAxes: [{
+                			ticks: {
+                    			min: 0,
+						}
+					}]
+				}
+			},
+		});	
+	}
+	
+	function updateMoveChartTeam(service,stationary,move){
+	$('#myChart6').remove(); // this is my <canvas> element
+	$('#grid-5').append('<canvas id="myChart6"><canvas>');
+	var canvas = document.querySelector('#myChart6');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Service", "Unknown Stops","Travel"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#ff6961",
+					"#3498db"
+				  ],
+				  data: [service,stationary,move]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems, data) {
+						var labelData = data.datasets[tooltipItems.datasetIndex];
+						var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1])+ parseFloat(labelData.data[2]);
+						var svcPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+						var stayPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+						var movePcnt = (parseFloat(labelData.data[2])/total).toFixed(2)*100;
+						data.datasets[tooltipItems.datasetIndex].data[0] = svcPcnt.toFixed(2);
+						data.datasets[tooltipItems.datasetIndex].data[1] = stayPcnt.toFixed(2);
+						data.datasets[tooltipItems.datasetIndex].data[2] = movePcnt.toFixed(2);
+							return data.labels[tooltipItems.index] + 
+						" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+			
+		});
+	}
+	
+	function updateMoveChartTeamComp(service,stationary,move){
+	var stop_t = service+stationary;
+	$('#myChart6Comp').remove(); // this is my <canvas> element
+	$('#grid-6').append('<canvas id="myChart6Comp"><canvas>');
+	var canvas = document.querySelector('#myChart6Comp');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Service", "Unknown Stops","Travel"],
+				
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#ff6961",
+					"#2ecc71"
+				  ],
+				  data: [service,stationary,move]
+				}]
+			
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+				tooltips: {
+					callbacks: {
+						label: function(tooltipItems, data) {
+						var labelData = data.datasets[tooltipItems.datasetIndex];
+						var total = parseFloat(labelData.data[0]) + parseFloat(labelData.data[1])+ parseFloat(labelData.data[2]);
+						var svcPcnt = (parseFloat(labelData.data[0])/total).toFixed(2)*100;
+						var stayPcnt = (parseFloat(labelData.data[1])/total).toFixed(2)*100;
+						var movePcnt = (parseFloat(labelData.data[2])/total).toFixed(2)*100;
+						data.datasets[tooltipItems.datasetIndex].data[0] = svcPcnt.toFixed(2);
+						data.datasets[tooltipItems.datasetIndex].data[1] = stayPcnt.toFixed(2);
+						data.datasets[tooltipItems.datasetIndex].data[2] = movePcnt.toFixed(2);
+							return data.labels[tooltipItems.index] + 
+						" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+			
+		});
+	}
+	
+	function updateFenceChartCompany(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer){
+	$('#myChart9Coy').remove(); // this is my <canvas> element
+	$('#grid-7').append('<canvas id="myChart9Coy"><canvas>');
+	var canvas = document.querySelector('#myChart9Coy');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Depot","Port","Warehouse", "Homebase", "Trailer Park"],
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#29adde",
+					"#2ecc71",
+					"#ffb347",
+					"#ff6961",
+				  ],
+				  data: [svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+				tooltips: {
+					callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var depot = parseFloat(labelData.data[0]);
+							var port = parseFloat(labelData.data[1]);
+							var warehouse = parseFloat(labelData.data[2]);
+							var parking = parseFloat(labelData.data[3]);
+							var customer = parseFloat(labelData.data[4]);
+							var total = depot + port + warehouse + parking;
+							var depotPcnt = (depot/total).toFixed(2)*100;
+							var portPcnt = (port/total).toFixed(2)*100;
+							var warehousePcnt = (warehouse/total).toFixed(2)*100;
+							var parkingPcnt = (parking/total).toFixed(2)*100;
+							var customerPcnt = (customer/total).toFixed(2)*100;
+							if(depot!=0){}
+							data.datasets[tooltipItems.datasetIndex].data[0] = depotPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[1] = portPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[2] = warehousePcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[3] = parkingPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[4] = customerPcnt.toFixed(2);
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+		
+		});
+	}
+	
+		
+ 	function updateFenceBarTeam(fenceBarArr){
+	//colours Homebase-Orange = fda036, Port-Light Blue = #55bee5,Trailer Park-Red = #ff6961,Depot-Blue = #3498db,WH-Green = #2ecc71	
+	$('#myChart12').remove(); // this is my <canvas> element
+	$('#grid-12').append('<canvas id="myChart12"><canvas>');
+	var canvas = document.querySelector('#myChart12');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Depot","Port","Warehouse", "Homebase", "Trailer Park"],
+			datasets: fenceBarArr
+		};
+		var moveBarChart = new Chart(ctx, {
+			type: 'bar',
+			data: data,
+			options: {
+				title: {
+					display: false,
+				},
+				barValueSpacing: 1,
+				 scales: {
+           			yAxes: [{
+                			ticks: {
+                    			min: 0,
+						}
+					}]
+				}
+			},
+		});	
+	}
+
+	
+	function updateFenceChartTeam(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer){
+	$('#myChart9').remove(); // this is my <canvas> element
+	$('#grid-8').append('<canvas id="myChart9"><canvas>');
+	var canvas = document.querySelector('#myChart9');
+	var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ["Depot","Port","Warehouse", "Homebase", "Trailer Park"],
+			datasets: [{
+				  backgroundColor: [
+					"#3498db",
+					"#29adde",
+					"#2ecc71",
+					"#ffb347",
+					"#ff6961",
+				  ],
+				  data: [svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+				tooltips: {
+					callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var depot = parseFloat(labelData.data[0]);
+							var port = parseFloat(labelData.data[1]);
+							var warehouse = parseFloat(labelData.data[2]);
+							var parking = parseFloat(labelData.data[3]);
+							var customer = parseFloat(labelData.data[4]);
+							var total = depot + port + warehouse + parking;
+							var depotPcnt = (depot/total).toFixed(2)*100;
+							var portPcnt = (port/total).toFixed(2)*100;
+							var warehousePcnt = (warehouse/total).toFixed(2)*100;
+							var parkingPcnt = (parking/total).toFixed(2)*100;
+							var customerPcnt = (customer/total).toFixed(2)*100;
+							if(depot!=0){}
+							data.datasets[tooltipItems.datasetIndex].data[0] = depotPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[1] = portPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[2] = warehousePcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[3] = parkingPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[4] = customerPcnt.toFixed(2);
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+		
+		});
+	}
+	
+		function updateFenceChartTeamComp(svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer){
+		$('#myChart9Comp').remove(); // this is my <canvas> element
+		$('#grid-9').append('<canvas id="myChart9Comp"><canvas>');
+		var canvas = document.querySelector('#myChart9Comp');
+		var ctx = canvas.getContext('2d');
+		var data = {
+			labels: ['Depot','Port','Warehouse','Parking','Customer'],
+			datasets: [{
+				  backgroundColor: [
+					"#2ecc71",
+					"#3498db",
+					"#fdfd96",
+					"#ffb347",
+					"#ff6961",
+				  ],
+				  data: [svc_depot,svc_terminal,svc_warehouse,svc_parking,svc_customer]
+				}]
+		};
+		var myChart = new Chart(ctx, {
+			type: 'doughnut',
+			data: data,
+			options: {
+				legend: {
+					display: false,
+				},
+					tooltips: {
+						callbacks: {
+							label: function(tooltipItems, data) {
+							var labelData = data.datasets[tooltipItems.datasetIndex];
+							var depot = parseFloat(labelData.data[0]);
+							var port = parseFloat(labelData.data[1]);
+							var warehouse = parseFloat(labelData.data[2]);
+							var parking = parseFloat(labelData.data[3]);
+							var customer = parseFloat(labelData.data[4]);
+							var total = depot + port + warehouse + parking;
+							var depotPcnt = (depot/total).toFixed(2)*100;
+							var portPcnt = (port/total).toFixed(2)*100;
+							var warehousePcnt = (warehouse/total).toFixed(2)*100;
+							var parkingPcnt = (parking/total).toFixed(2)*100;
+							var customerPcnt = (customer/total).toFixed(2)*100;
+							if(depot!=0){}
+							data.datasets[tooltipItems.datasetIndex].data[0] = depotPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[1] = portPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[2] = warehousePcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[3] = parkingPcnt.toFixed(2);
+							data.datasets[tooltipItems.datasetIndex].data[4] = parkingPcnt.toFixed(2);
+								return data.labels[tooltipItems.index] + 
+							" : " +  data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index]  +' %';
+						}
+					}
+				},
+				maintainAspectRatio: false
+			},
+		
+		});
+	}
+	
+	//Notes Functions 20-12-17----------
+	
+	function convertToHHMM(info) {
+		var hrs = parseInt(Number(info));
+		var min = Math.round((Number(info)-hrs) * 60);
+		return hrs +  " hrs and " + min + " mins"; 
+	}
+	
+	function showUtilNotesCompany(util,nonUtil){		
+		var utilConvert = convertToHHMM(util);
+		//document.getElementById('utilPara').innerHTML = "Working Time: " + utilConvert;
+		document.getElementById('working1').innerHTML = "Working " + utilConvert;
+
+		var nonUtilConvert = convertToHHMM(nonUtil);
+		document.getElementById('not-working1').innerHTML = "Non-Working " + nonUtilConvert;
+	
+		//document.getElementById('notUtilPara').innerHTML = "Non Working Time: " + nonUtilConvert ;			
+
+	}
+	
+	function showUtilNotesTeam(util,nonUtil){		
+		var utilConvert = convertToHHMM(util);
+		//document.getElementById('utilPara').innerHTML = "Working Time: " + utilConvert;
+		document.getElementById('working2').innerHTML = "Working " + utilConvert;
+
+		var nonUtilConvert = convertToHHMM(nonUtil);
+		document.getElementById('not-working2').innerHTML = "Non-Working " + nonUtilConvert;
+	
+		//document.getElementById('notUtilPara').innerHTML = "Non Working Time: " + nonUtilConvert ;			
+
+	}
+	
+	function showUtilNotesTeamComp(util,nonUtil){
+		var utilConvert = convertToHHMM(util);
+
+		document.getElementById('working3').innerHTML = "Working " +utilConvert;	
+		var nonUtilConvert = convertToHHMM(nonUtil);
+		
+		document.getElementById('not-working3').innerHTML = "Non-Working " + nonUtilConvert ;	
+	}
+	
+	function showMoveNotesCompany(service,stop,move){
+		var moveConvert = convertToHHMM((move/60));
+
+		document.getElementById('travel1').innerHTML = "Travel " + moveConvert;	
+
+		var svcConvert = convertToHHMM((service/60));
+		
+		document.getElementById('service1').innerHTML = "Service " + svcConvert ;
+
+		var stopConvert = convertToHHMM((stop/60));
+		
+		document.getElementById('stop1').innerHTML = "Stop " + stopConvert;		
+	}
+	
+	function showMoveNotesTeam(service,stop,move){
+		var moveConvert = convertToHHMM((move/60));
+
+		document.getElementById('travel2').innerHTML = "Travel " + moveConvert;	
+
+		var svcConvert = convertToHHMM((service/60));
+		
+		document.getElementById('service2').innerHTML = "Service " + svcConvert  ;
+
+		var stopConvert = convertToHHMM((stop/60));
+		
+		document.getElementById('stop2').innerHTML = "Stop " + stopConvert ;		
+	}
+	
+	function showMoveNotesTeamComp(service,stop,move){
+		var moveConvert = convertToHHMM((move/60));
+		
+		document.getElementById('travel3').innerHTML = "Travel " + moveConvert;	
+
+		var svcConvert = convertToHHMM((service/60));
+		
+		document.getElementById('service3').innerHTML = "Service " +  svcConvert ;
+
+		var stopConvert = convertToHHMM((stop/60));
+		
+		document.getElementById('stop3').innerHTML = "Stop " + stopConvert ;			
+	}
+	
+	function showFenceNotesCompany(depot,port,warehouse,parking,customer){
+		var depotConvert = convertToHHMM((depot/60));
+		var portConvert = convertToHHMM((port/60));
+		var warehouseConvert = convertToHHMM((warehouse/60));
+		var parkingConvert = convertToHHMM((parking/60));
+		var customerConvert = convertToHHMM((customer/60));
+
+		document.getElementById('depot1').innerHTML = "Depot" + depotConvert;	
+		document.getElementById('port1').innerHTML = "Port " + portConvert; 
+		document.getElementById('warehouse1').innerHTML = "Warehouse  " + warehouseConvert;
+		document.getElementById('homebase1').innerHTML = "Homebase " + parkingConvert; 
+		document.getElementById('trailer1').innerHTML = "Trailer Park " + customerConvert;
+	}
+	
+	function showFenceNotesTeam(depot,port,warehouse,parking,customer){
+		var depotConvert = convertToHHMM((depot/60));
+		var portConvert = convertToHHMM((port/60));
+		var warehouseConvert = convertToHHMM((warehouse/60));
+		var parkingConvert = convertToHHMM((parking/60));
+		var customerConvert = convertToHHMM((customer/60));
+
+		document.getElementById('depot2').innerHTML = "Depot" + depotConvert;	
+		document.getElementById('port2').innerHTML = "Port " + portConvert; 
+		document.getElementById('warehouse2').innerHTML = "Warehouse  " + warehouseConvert;
+		document.getElementById('homebase2').innerHTML = "Homebase " + parkingConvert; 
+		document.getElementById('trailer2').innerHTML = "Trailer Park " + customerConvert;
+	}
+	
+	function showFenceNotesTeamComp(depot,port,warehouse,parking,customer){
+		var depotConvert = convertToHHMM((depot/60));
+		var portConvert = convertToHHMM((port/60));
+		var warehouseConvert = convertToHHMM((warehouse/60));
+		var parkingConvert = convertToHHMM((parking/60));
+		var customerConvert = convertToHHMM((parking/60));
+
+		document.getElementById('depot3').innerHTML = "Depot" + depotConvert;	
+		document.getElementById('port3').innerHTML = "Port " + portConvert; 
+		document.getElementById('warehouse3').innerHTML = "Warehouse  " + warehouseConvert;
+		document.getElementById('homebase3').innerHTML = "Homebase " + parkingConvert; 
+		document.getElementById('trailer3').innerHTML = "Trailer Park " + customerConvert;	
+	}
+	
+	function showNoDataNotesCoy(workHasData,moveHasData,serviceHasData){
+		if(workHasData){
+			$('#myChart3Coy').remove(); 
+			document.getElementById('working1').innerHTML = "No Data for this date range";
+			document.getElementById('not-working1').innerHTML = "";
+						
+		}
+		if(moveHasData){
+			$('#myChart6Coy').remove(); 
+			document.getElementById('travel1').innerHTML = "No Data for this date range";
+			document.getElementById('service1').innerHTML = "";
+			document.getElementById('stop1').innerHTML = "" ;		
+		}
+		if(serviceHasData){
+			$('#myChart9Coy').remove(); 
+			document.getElementById('depot1').innerHTML = "No Data for this date range";
+			document.getElementById('port1').innerHTML = ""; 
+			document.getElementById('warehouse1').innerHTML = "";
+			document.getElementById('homebase1').innerHTML = ""; 
+			document.getElementById('trailer1').innerHTML = "";
+		}
+	}
+	
+
+	function showNoDataNotes(workHasData,moveHasData,serviceHasData){
+		if(workHasData){
+			$('#myChart3').remove(); 
+			document.getElementById('working2').innerHTML = "No Data for this date range";
+			document.getElementById('not-working2').innerHTML = "";
+						
+		}
+		if(moveHasData){
+			$('#myChart6').remove(); 
+			document.getElementById('travel2').innerHTML = "No Data for this date range";
+			document.getElementById('service2').innerHTML = "";
+			document.getElementById('stop2').innerHTML = "" ;		
+		}
+		if(serviceHasData){
+			$('#myChart9').remove(); 
+			document.getElementById('depot2').innerHTML = "No Data for this date range";
+			document.getElementById('port2').innerHTML = ""; 
+			document.getElementById('warehouse2').innerHTML = "";
+			document.getElementById('homebase2').innerHTML = ""; 
+			document.getElementById('trailer2').innerHTML = "";
+		}
+	}
+	
+	function showNoDataNotesComp(workHasData,moveHasData,serviceHasData){
+			if(workHasData){
+			$('#myChart3Comp').remove(); 
+			document.getElementById('working3').innerHTML = "No Data for this date range";
+			document.getElementById('not-working3').innerHTML = "";
+						
+		}
+		if(moveHasData){
+			$('#myChart6Comp').remove(); 
+			document.getElementById('travel3').innerHTML = "No Data for this date range";
+			document.getElementById('service3').innerHTML = "";
+			document.getElementById('stop3').innerHTML = "" ;		
+		}
+		if(serviceHasData){
+			$('#myChart9Comp').remove(); 
+			document.getElementById('depot3').innerHTML = "No Data for this date range";
+			document.getElementById('port3').innerHTML = ""; 
+			document.getElementById('warehouse3').innerHTML = "";
+			document.getElementById('homebase3').innerHTML = ""; 
+			document.getElementById('trailer3').innerHTML = "";
+		}
+	}
+	
+	$('.form').find('input, textarea').on('keyup blur focus', function (e) {
+  
+	  var $this = $(this),
+		  label = $this.prev('label');
+
+		  if (e.type === 'keyup') {
+				if ($this.val() === '') {
+			  label.removeClass('active highlight');
+			} else {
+			  label.addClass('active highlight');
+			}
+		} else if (e.type === 'blur') {
+			if( $this.val() === '' ) {
+				label.removeClass('active highlight'); 
+				} else {
+				label.removeClass('highlight');   
+				}   
+		} else if (e.type === 'focus') {
+		  
+		  if( $this.val() === '' ) {
+				label.removeClass('highlight'); 
+				} 
+		  else if( $this.val() !== '' ) {
+				label.addClass('highlight');
+				}
+		}
+
+	});
+
+	$('.tab a').on('click', function (e) {
+	  
+	  e.preventDefault();
+	  
+	  $(this).parent().addClass('active');
+	  $(this).parent().siblings().removeClass('active');
+	  
+	  target = $(this).attr('href');
+
+	  $('.tab-content > div').not(target).hide();
+	  
+	  $(target).fadeIn(600);
+	  
+	});
+	
+	/*code for radio button toggling*/
+	$(document).ready(function() {
+    $("input[name=group1]").on( "change", function() {
+
+         var test = $(this).val();
+         $(".togglediv").hide();
+         $("#"+test).show();
+    } );
+});
+	
+	/*code for listbox for choosing teams*/
+	
+	(function () {
+    $('#btnRight').click(function (e) {
+        var selectedOpts = $('#lstBox1 option:selected');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox2').append($(selectedOpts).clone());
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+    $('#btnAllRight').click(function (e) {
+        var selectedOpts = $('#lstBox1 option');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox2').append($(selectedOpts).clone());
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+    $('#btnLeft').click(function (e) {
+        var selectedOpts = $('#lstBox2 option:selected');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox1').append($(selectedOpts).clone());
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+    $('#btnAllLeft').click(function (e) {
+        var selectedOpts = $('#lstBox2 option');
+        if (selectedOpts.length == 0) {
+            alert("Nothing to move.");
+            e.preventDefault();
+        }
+        $('#lstBox1').append($(selectedOpts).clone());
+		
+        $(selectedOpts).remove();
+        e.preventDefault();
+    });
+}(jQuery));
+</script>

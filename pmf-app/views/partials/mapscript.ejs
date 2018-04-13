@@ -1,0 +1,49 @@
+<!-- views/partials/mapscript.ejs -->
+<!-- Google Maps API for Drawing-->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTa_1qUZlC8V-vKaA-lL9ivlmxRxo8qu4&libraries=drawing&callback=initMap" async defer></script>
+<script>
+function initMap() {
+	var map = new google.maps.Map(document.getElementById('map'), {
+	  center: {lat: 1.3521, lng: 103.819},
+	  zoom: 15
+	});
+	
+	var drawingManager = new google.maps.drawing.DrawingManager({
+	  drawingMode: google.maps.drawing.OverlayType.MARKER,
+	  drawingControl: true,
+	  drawingControlOptions: {
+	  position: google.maps.ControlPosition.TOP_CENTER,
+	  drawingModes: ['polygon',]
+	  },
+	  markerOptions: {icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'},
+	  circleOptions: {
+		fillColor: '#ffff00',
+		fillOpacity: 1,
+		strokeWeight: 5,
+		clickable: false,
+		editable: true,
+		zIndex: 1
+	  }
+	});
+	drawingManager.setMap(map);
+	
+	google.maps.event.addListener(drawingManager, 'polygoncomplete', function(polygon) {
+		var path = polygon.getPath()
+		var coordinates = [];
+		for (var i = 0 ; i < path.length ; i++) {
+			document.getElementById('poly').innerHTML += path.getAt(i).lng() + "," + path.getAt(i).lat() + "-";
+		}
+		document.getElementById('poly').innerHTML += path.getAt(0).lng() + "," + path.getAt(0).lat();
+	});
+	/*
+		for (var i = 0; i < polygon.getPath().getLength(); i++) {
+			document.getElementById('poly').innerHTML += polygon.getPath().getAt(i).toUrlValue(6) + "-";
+		}
+		document.getElementById('poly').innerHTML += polygon.getPath().getAt(0).toUrlValue(6);
+	
+		polygonArray.push(polygon);
+	});*/
+	
+	google.maps.event.addDomListener(window, "load", initMap);
+}
+</script>

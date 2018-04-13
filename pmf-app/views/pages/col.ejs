@@ -1,0 +1,344 @@
+ <!DOCTYPE html>
+<html lang="en">
+	<div id="loader"></div>
+	<div id="overlay"></div>
+    <% include ../partials/head %>
+    <% include ../partials/scripts %>
+    <% include ../partials/nav %>
+    <body class="col" id="colID">
+        <% include ../partials/sidenav %>
+        <div class="container-fluid" id="bodyID">
+            <div class="row greybar">
+				<div class="col-md-6 col-md-offset-3 col-xs-12">
+				<!-- <label for="filterCal">From:</label> -->
+                    <p style="padding-bottom:1em;"><input type="date" name="calendar" class="form-control" id="filterCal" style="width:15.0em; float:left;"
+/><span style="float:left; margin: 0.5em; color:#FFF"> to </span> 
+<input type="date" name="calendar2"class="form-control" id="filterCal2" style="width:15.0em; float:left;" /></p>
+					
+				</div>
+				<!-- <div class="col-md-3">
+				<label for="filterCal2">To:</label>
+                    <input type="date" name="calendar2"class="form-control" id="filterCal2" /></br>
+				</div>
+
+			 <div class="col-md-2" id="vhDD">
+				 <label for="vehicle-dropdown">Vehicle/Team/Coy:</label>
+                    <select required="required" id="vehicle-dropdown" name="vehicleSelect" class="form-control">
+                        <option value="" disabled selected hidden>Vehicle</option>
+                    </select>
+				</div>
+				
+				<div class="col-md-2" id="vhDD2">
+				<label for="vehicle-dropdown-2">Compare to:</label>
+					<select required="required" id="vehicle-dropdown-2" name="vehicleSelect2" class="form-control">
+                        <option value="" disabled selected hidden>Vehicle</option>
+                    </select>
+				</div>
+				
+				
+				-->
+				<div class="col-md-1">
+				<p style="padding-bottom:1em;"><!--<input type="textbox" value="Enter Team/Vehicle Name" style="float: left; width: 12.0em;margin-right:0.5em;" />
+				<span style="float:left;color:#FFF; margin:0.5em">Vs</span>
+				<input type="textbox" value="Enter Team/Vehicle Name" style="float: left; width: 12.0em;margin-right:0.5em" />
+				<button class="btn btn-sm btn-primary" onclick="getSingleVehicleCharts()" stylye="float:left; ">Generate Charts</button>-->
+				</p>
+				</div>
+
+					
+				<div class="col-md-2">
+				<!-- <label for="compareChkBox">Views</label> -->
+				 <div class="chart-selector">
+        <input checked="checked" id="donut" type="radio" name="group1" value="donutchart"/>
+        <label class="drinkcard-cc donut" for="donut"></label>
+        <input id="bargraph" type="radio" name="group1" value="barchart" />
+        <label class="drinkcard-cc bargraph"for="bargraph"></label>
+     <!--    <button class="btn btn-sm btn-primary" onclick="getSingleVehicleCharts()" style="float:left; ">Generate Charts</button> -->
+             
+                     
+    </div>
+				
+				<!-- <input type="checkbox" id="compareChkBox" data-on="Donut" data-off="Bar" data-toggle="toggle" onchange="showCompareStatus()"> -->
+				</div>
+				
+				
+            </div>
+			<div class="container-fluid borderbox" style="padding-top:10px" align="center">
+			<div class="row">
+			<div class="col-sm-4 summary vertical-segment horizontal-segment" style="min-height:5.0em"><h3 id="coyName">[Company Name]</h3></div>
+			<div class="col-sm-4 summary vertical-segment horizontal-segment" style="min-height:5.0em"><h3><input type="textbox" placeholder="Enter Team/Vehicle Name" id="autoVeh1" onchange="getSingleVehicleCharts()"/></h3>
+            </div>
+			<div class="col-sm-4 summary  vertical-segment horizontal-segment" style="min-height:5.0em"><h3><input type="textbox" placeholder="Enter Team/Vehicle Name" id="autoVeh2" onchange="getSingleVehicleCharts()" disabled="true"/></h3>
+                
+            </div>
+			</div>
+			
+			
+			<div class="row">
+			<div class="col-sm-4 summary vertical-segment horizontal-segment">
+           <div class="summary-icon"><img src="../public/images/avg-dist-icon.png" height="50px;"></div>
+                <div><span class="data-font" id="adCoy"> 0 km</span><br>Average Distance</div>
+            </div>
+                
+			<div class="col-sm-4 summary vertical-segment horizontal-segment">
+           <div class="summary-icon"><img src="../public/images/avg-dist-icon.png" height="60px"></div>
+            <div><span class="data-font" id="adInd">0 km</span><br>Average Distance</div>
+            </div>
+                
+			<div class="col-sm-4 summary vertical-segment horizontal-segment">
+            <div class="summary-icon"><img src="../public/images/avg-dist-icon.png"></div>
+            <div><span class="data-font" id="adComp">0 km</span><br>Average Distance</div>
+            </div>
+            </div>
+                
+			<div class="row">
+			<div class="col-sm-4 summary vertical-segment horizontal-segment">
+            <div class="summary-icon"><img src="../public/images/avg-cost-icon.png" height="60px"></div>
+            <div><span class="data-font" id="fcCoy">$0.00</span><br>Average Fuel Cost</div>
+            </div>
+                
+			<div class="col-sm-4 summary vertical-segment horizontal-segment">
+            <div class="summary-icon"><img src="../public/images/avg-cost-icon.png" height="60px"></div>
+            <div><span class="data-font" id="fcInd">$0.00</span><br>Average Fuel Cost</div>
+            </div>
+                
+			<div class="col-sm-4 summary vertical-segment horizontal-segment">
+            <div class="summary-icon"><img src="../public/images/avg-cost-icon.png" height="50px"></div>
+            <div><span class="data-font" id="fcComp">$0.00</span><br>Average Fuel Cost</div>
+            </div>
+			</div>
+			
+			<div class="row">
+			<div class="col-sm-4 summary vertical-segment">
+            <div class="summary-icon"><img src="../public/images/avg-fuel-icon.png"></div>
+            <div><span class="data-font" id="conCoy" >0ℓ</span><br>Average Fuel Consumption</div>
+            </div>
+			<div class="col-sm-4 summary vertical-segment">
+            <div class="summary-icon"><img src="../public/images/avg-fuel-icon.png"></div>
+            <div><span class="data-font" id="conInd" >0ℓ</span><br>Average Fuel Consumption</div>
+            </div>
+            <div class="col-sm-4 summary vertical-segment">
+            <div class="summary-icon"><img src="../public/images/avg-fuel-icon.png"></div>
+            <div><span class="data-font" id="conComp">0ℓ</span><br>Average Fuel Consumption</div>
+            </div>    
+			</div>
+			</div>
+		
+			<div class="container-fluid togglediv" id="donutchart">
+			<div class="row" style="padding:top:1em;"> <!--working vs non-working -->
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">[Company Name] Working vs Non-working</div> -->
+			<div class="chart-stage">
+			<div id="grid-1">
+			</div>
+			<div class="chart-notes" id="notesId">
+			<ul>
+			<li class="charting-legend working"><span class="data-font" id="working1"></span></li>
+                <li class="charting-legend not-working"><span class="data-font" id="not-working1"></span></li>
+			</ul>
+            <!-- <button type="button" class="btn btn-primary" id='idleBtn' onclick="anotherOne()">Show Move vs. Stationary</button> -->
+			</div>
+			</div>
+			</div>
+			</div>
+			
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">Team [Team Name] Working vs Non-working</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-2">
+			</div>
+			<div class="chart-notes" id="notesId">
+			<ul>
+			<li class="charting-legend working"><span class="data-font" id="working2"></span></li>
+            <li class="charting-legend not-working"><span class="data-font" id="not-working2"></span></li>
+			</ul>
+			</div>
+			</div>
+			</div>
+			</div>
+			
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">[Individual Name] Working vs Non-working</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-3">
+			</div>
+			<div class="chart-notes" id="notesId">
+			<ul>
+			<li class="charting-legend working"><span class="data-font" id="working3"></span></li>
+            <li class="charting-legend not-working"><span class="data-font" id="not-working3"></span></li>
+			</ul>
+			</div>
+			</div>
+			</div>
+			</div>
+			</div> <!-- close working vs non-working row -->
+			
+			<div class="row"> <!--travel vs stop -->
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">[Company Name] Travel vs Stop</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-4">
+			</div>
+			<div class="chart-notes" id="notesId">
+            <ul>
+			<li class="charting-legend travel"><span class="data-font" id="travel1"></span></li>
+            <li class="charting-legend service"><span class="data-font" id="service1"></span></li>
+            <li class="charting-legend not-working"><span class="data-font" id="stop1"></span></li>
+			</ul>    
+			</div>
+			</div>
+			</div>
+			</div>
+			
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">Team [Team Name] Travel vs Stop</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-5">
+			</div>
+			<div class="chart-notes" id="notesId">
+			<ul>
+			<li class="charting-legend travel"><span class="data-font" id="travel2"></span></li>
+            <li class="charting-legend service"><span class="data-font" id="service2"></span></li>
+            <li class="charting-legend not-working"><span class="data-font" id="stop2"></span></li>
+			</ul>    
+			</div>
+			</div>
+			</div>
+			</div>
+			
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">[Individual Name] Travel vs Stop</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-6">
+			</div>
+			<div class="chart-notes" id="notesId">
+			    <ul>
+			<li class="charting-legend travel"><span class="data-font" id="travel3"></span></li>
+            <li class="charting-legend service"><span class="data-font" id="service3"></span></li>
+            <li class="charting-legend not-working"><span class="data-font" id="stop3"></span></li>
+			</ul>    
+			</div>
+			</div>
+			</div>
+			</div>
+			</div> <!-- travel vs stop -->
+			
+			<div class="row"> <!--Company service time at areas -->
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">[Company Name] Service Time at areas</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-7">
+			</div>
+			<div class="chart-notes" id="notesId">
+            <ul>
+			<li class="charting-legend depot"><span class="data-font" id="depot1"></span></li>
+            <li class="charting-legend port"><span class="data-font" id="port1"></span></li>
+            <li class="charting-legend warehouse"><span class="data-font" id="warehouse1"></span></li>
+            <li class="charting-legend homebase"><span class="data-font" id="homebase1"></span></li>
+            <li class="charting-legend trailer-park"><span class="data-font" id="trailer1"></span></li>
+        	</ul>        
+            
+			</div>
+			</div>
+			</div>
+			</div>
+			
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">Team [Team Name] Service Time at areas</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-8">
+			</div>
+			<div class="chart-notes" id="notesId">
+			<ul>
+			<li class="charting-legend depot"><span class="data-font" id="depot2"></span></li>
+            <li class="charting-legend port"><span class="data-font" id="port2"></span></li>
+            <li class="charting-legend warehouse"><span class="data-font" id="warehouse2"></span></li>
+            <li class="charting-legend homebase"><span class="data-font" id="homebase2"></span></li>
+            <li class="charting-legend trailer-park"><span class="data-font" id="trailer2"></span></li>
+        	</ul>      
+			</div>
+			</div>
+			</div>
+			</div>
+			
+			<div class="col-sm-4 vertical-segment">
+			<div class="chart-wrapper horizontal-segment">
+			<!-- <div class="chart-title">[Individual Name] Service Time at areas</div> -->
+			<div class="chart-stage">
+			
+			<div id="grid-9">
+			</div>
+			<div class="chart-notes" id="notesId">
+			<ul>
+			<li class="charting-legend depot"><span class="data-font" id="depot3"></span></li>
+            <li class="charting-legend port"><span class="data-font" id="port3"></span></li>
+            <li class="charting-legend warehouse"><span class="data-font" id="warehouse3"></span></li>
+            <li class="charting-legend homebase"><span class="data-font" id="homebase3"></span></li>
+            <li class="charting-legend trailer-park"><span class="data-font" id="trailer3"></span></li>
+        	</ul>      
+			</div>
+			</div>
+			</div>
+			</div>
+			</div> <!-- close working vs non-working row -->
+			</div>
+			
+			<div class="container-fluid togglediv" id="barchart">
+			<div class="row">
+			<div class="col-md-8 col-md-offset-2">
+			<div class="chart-wrapper horizontal-segment">
+			<div class="chart-title">Working vs Non-working comparison</div>
+			<div class="chart-stage">
+			<div id="grid-10" >
+			</div>
+			</div>
+			</div>
+			</div>
+			<div class="col-md-1 vertical-segment"></div>
+			</div>
+			
+			
+			<div class="row">
+			<div class="col-md-8 col-md-offset-2">
+			<div class="chart-wrapper horizontal-segment">
+			<div class="chart-title">Travel vs Stop comparison</div>
+			<div class="chart-stage">
+			<div id="grid-11">
+			</div>
+			</div>
+			</div>
+			</div>
+			<div class="col-md-1 vertical-segment"></div>
+			</div>
+			
+			<div class="row">
+			<div class="col-md-8 col-md-offset-2">
+			<div class="chart-wrapper horizontal-segment">
+			<div class="chart-title">Service time by areas comparison</div>
+			<div class="chart-stage">
+			<div id="grid-12">
+			</div>
+			</div>
+			</div>
+			</div>
+			<div class="col-md-1 vertical-segment"></div>
+			</div>	  
+        </div>
+    </body>
+    <% include ../partials/footer %>
+</html>

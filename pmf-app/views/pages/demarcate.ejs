@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <% include ../partials/head %>
+	<% include ../partials/scripts %>
+	<% include ../partials/mapscript %>
+	<% include ../partials/nav %>
+	
+    <body class="demarcate-area">
+	<% include ../partials/sidenav %>
+	<div class="container-fluid" id="bodyID">
+    <div class="row greybar">
+    <div class="col-md-4">
+	<h4 style="color:#FFF">DEMARCATE AREA OF INTEREST</h4>
+    </div>
+    <div class="col-md-4">
+    <select required="required" id="vehicle-dropdown" name="vehicleSelect" class="form-control" style="width:20.0em;">
+    <option value="" >Search Area</option>
+    </select>
+    </div>
+
+					
+    <div class="col-md-2 col-md-offset-2">
+    <div><button type="submit" class="btn btn-info btn-md" form="demcArea">Submit Info</button></div>    
+    
+    </div>
+				
+    </div>
+    <div class="row" style="margin-top:20px;">
+    <div class="col-md-8 col-xs-12">
+    <div id="map" class="containerEx" style="height:30.0em; display:block;"></div>    
+    
+    </div>
+    <div class="col-md-4 col-xs-12">
+    <div id="form_div">
+		<form action="fenceData" id="demcArea" method="POST">
+		  	<p><input type="text" class="form-control" name="areaName" required placeholder="Area Name"></p>
+            <p><select name="areaType" class="form-control" required="required" style="color:#c3c3c3">
+			  <option value="" disabled="disabled" selected="selected">Type of Area</option>
+			  <option value="CU">Customer Location</option>
+			  <option value="PK">Parking Area</option>
+			  <option value="WH">Warehouse</option>
+			  
+		  </select></p>
+
+            <p><textarea name="areaAddr" placeholder="Area Address" class="form-control"></textarea></p>
+		  	<p><input type="text" class="form-control"  name="areaPostal" placeholder="Area Postal Code"></p>
+		  	<textarea id='poly' name='poly' readonly ></textarea>
+					</form>
+		<br>
+			 <button type="submit" class="btn btn-info btn-md" form="demcArea">Save</button>
+		</div>
+        
+    </div>    
+    </div>    
+    
+		
+		    
+    
+        
+    
+    </div>
+    </body>
+	<% include ../partials/footer %>
+	
+</html>
